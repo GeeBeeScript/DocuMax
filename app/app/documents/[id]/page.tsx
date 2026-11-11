@@ -6,7 +6,9 @@ import { PillButton } from "@/components/brand/pill-button";
 import { documentsCopy } from "@/content/app";
 import { DocumentViewer } from "@/features/documents/components/document-viewer";
 import { DocumentStatusPanel } from "@/features/documents/components/document-status-panel";
-import { getDocument } from "@/features/documents/queries";
+import { ExtractedText } from "@/features/documents/components/extracted-text";
+import { getDocument, listDocumentPages } from "@/features/documents/queries";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { canWrite } from "@/lib/auth/roles";
 import { requireActiveOrg } from "@/lib/auth/session";
 import { formatBytes } from "@/lib/documents/upload-rules";
@@ -21,6 +23,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
   const ctx = await requireActiveOrg();
   const doc = /^[0-9a-f-]{36}$/i.test(id) ? await getDocument(ctx.org.id, id) : null;
   if (!doc) notFound();
+  const pages = await listDocumentPages(ctx.org.id, doc.id);
   const labels = entityLabels(ctx.org.entity_kind);
   const { facts } = documentsCopy.detail;
 
@@ -61,7 +64,28 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           aria-label={doc.fileName}
           className="order-2 min-w-0 rounded-2xl border border-gray-200 bg-paper p-4 lg:order-1"
         >
-          <DocumentViewer url={doc.fileUrl} mimeType={doc.mimeType} fileName={doc.fileName} />
+          <Tabs defaultValue="preview" className="gap-4">
+            <TabsList className="self-start rounded-full bg-gray-100 p-1">
+              <TabsTrigger
+                value="preview"
+                className="rounded-full px-4 font-heading font-semibold data-active:bg-paper"
+              >
+                {documentsCopy.tabs.preview}
+              </TabsTrigger>
+              <TabsTrigger
+                value="text"
+                className="rounded-full px-4 font-heading font-semibold data-active:bg-paper"
+              >
+                {documentsCopy.tabs.text}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="preview">
+              <DocumentViewer url={doc.fileUrl} mimeType={doc.mimeType} fileName={doc.fileName} />
+            </TabsContent>
+            <TabsContent value="text">
+              <ExtractedText pages={pages} />
+            </TabsContent>
+          </Tabs>
         </section>
         <aside className="order-1 flex flex-col gap-5 rounded-2xl border border-gray-200 bg-paper p-5 lg:order-2">
           <DocumentStatusPanel
@@ -70,6 +94,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
             fileName={doc.fileName}
             initialStatus={doc.status}
             initialError={doc.error}
+            initialUpdatedAt={doc.updatedAt}
             canRetry={canWrite(ctx.role)}
           />
           <dl className="flex flex-col gap-3 text-sm">

@@ -10,6 +10,7 @@ export interface DocumentRow {
   status: DocumentStatus;
   entityName: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface DocumentDetail extends DocumentRow {
@@ -29,7 +30,7 @@ export async function listDocuments(orgId: string, limit = 100): Promise<Documen
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("documents")
-    .select("id, file_name, mime_type, size_bytes, status, created_at, entity:entities(name)")
+    .select("id, file_name, mime_type, size_bytes, status, created_at, updated_at, entity:entities(name)")
     .eq("org_id", orgId)
     .neq("status", "uploading")
     .order("created_at", { ascending: false })
@@ -43,6 +44,7 @@ export async function listDocuments(orgId: string, limit = 100): Promise<Documen
     status: d.status,
     entityName: d.entity?.name ?? null,
     createdAt: d.created_at,
+    updatedAt: d.updated_at,
   }));
 }
 
@@ -68,10 +70,36 @@ export async function getDocument(orgId: string, id: string): Promise<DocumentDe
     status: d.status,
     entityName: d.entity?.name ?? null,
     createdAt: d.created_at,
+    updatedAt: d.updated_at,
     error: d.error,
     pageCount: d.page_count,
     attempts: d.attempts,
     uploaderName: d.uploader?.full_name ?? d.uploader?.email ?? null,
     fileUrl: signed.data?.signedUrl ?? null,
   };
+}
+
+export interface DocumentPageText {
+  pageNo: number;
+  text: string;
+  source: "text_layer" | "ocr";
+  ocrConfidence: number | null;
+}
+
+/** Extracted text per page (RLS: members of the org). */
+export async function listDocumentPages(orgId: string, documentId: string): Promise<DocumentPageText[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("document_pages")
+    .select("page_no, text, source, ocr_confidence")
+    .eq("org_id", orgId)
+    .eq("document_id", documentId)
+    .order("page_no");
+  if (error) throw error;
+  return data.map((p) => ({
+    pageNo: p.page_no,
+    text: p.text,
+    source: p.source,
+    ocrConfidence: p.ocr_confidence === null ? null : Number(p.ocr_confidence),
+  }));
 }
