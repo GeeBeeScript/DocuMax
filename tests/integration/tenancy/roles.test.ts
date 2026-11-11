@@ -58,14 +58,12 @@ describe.each(ROLES)("as %s", (role) => {
   });
 
   it(`${canManage ? "can" : "cannot"} create invites`, async () => {
-    const { error } = await users[role].client
-      .from("invites")
-      .insert({
-        org_id: orgId,
-        email: `by-${role}@example.test`,
-        role: "member",
-        token_hash: newInviteToken().hash,
-      });
+    const { error } = await users[role].client.from("invites").insert({
+      org_id: orgId,
+      email: `by-${role}@example.test`,
+      role: "member",
+      token_hash: newInviteToken().hash,
+    });
     expect(error === null).toBe(canManage);
   });
 
@@ -111,14 +109,12 @@ describe("owner protections", () => {
   });
 
   it("invites can never grant the owner role", async () => {
-    const { error } = await users.owner.client
-      .from("invites")
-      .insert({
-        org_id: orgId,
-        email: "owner-invite@example.test",
-        role: "owner",
-        token_hash: newInviteToken().hash,
-      });
+    const { error } = await users.owner.client.from("invites").insert({
+      org_id: orgId,
+      email: "owner-invite@example.test",
+      role: "owner",
+      token_hash: newInviteToken().hash,
+    });
     expect(error).not.toBeNull();
   });
 

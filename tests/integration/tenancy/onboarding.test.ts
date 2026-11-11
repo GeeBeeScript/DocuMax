@@ -27,15 +27,13 @@ async function invite(
   overrides: { expires_at?: string; role?: "admin" | "member" | "viewer" } = {},
 ) {
   const { token, hash } = newInviteToken();
-  const { error } = await owner.client
-    .from("invites")
-    .insert({
-      org_id: orgId,
-      email,
-      token_hash: hash,
-      role: overrides.role ?? "member",
-      expires_at: overrides.expires_at,
-    });
+  const { error } = await owner.client.from("invites").insert({
+    org_id: orgId,
+    email,
+    token_hash: hash,
+    role: overrides.role ?? "member",
+    expires_at: overrides.expires_at,
+  });
   if (error) throw error;
   return token;
 }

@@ -20,6 +20,17 @@ export const authContent = {
       "Branded statements per property or job",
     ],
   },
-  /** Shown until auth is wired up in Phase 2. */
-  pendingNotice: "Accounts open soon — authentication is being connected.",
+  magicLink: {
+    toggle: "Email me a sign-in link instead",
+    togglePassword: "Use my password instead",
+    submit: "Send sign-in link",
+    sent: "If an account exists for that address, a sign-in link is on its way.",
+  },
+  confirmEmail: "Check your inbox to confirm your email, then come back to log in.",
+  linkError: "That sign-in link is invalid or has expired. Request a new one.",
+  errors: {
+    invalidCredentials: "Incorrect email or password.",
+    emailTaken: "An account with this email already exists. Log in instead.",
+    generic: "Something went wrong. Please try again.",
+  },
 };
