@@ -11,13 +11,15 @@ import { YellowMarker } from "@/components/brand/yellow-marker";
 import { ConfidencePill } from "@/components/app/confidence-pill";
 import { StatusBadge } from "@/components/app/status-badge";
 import { ExtractedFieldsMock } from "@/components/marketing/visuals/extracted-fields-mock";
+import { AlternatingFeature } from "@/components/marketing/alternating-feature";
+import { CheckList } from "@/components/marketing/check-list";
 import { FeatureGrid } from "@/components/marketing/feature-grid";
 import { InvoiceMock } from "@/components/marketing/visuals/invoice-mock";
 import { ReviewMock } from "@/components/marketing/visuals/review-mock";
 import { StatementMock } from "@/components/marketing/visuals/statement-mock";
 import { UploadMock } from "@/components/marketing/visuals/upload-mock";
 import { demoFields, demoInvoice, demoIssues, demoStatement, demoUploads } from "@/content/demo";
-import { features } from "@/content/marketing";
+import { features, highlights, useCases } from "@/content/marketing";
 import { DOCUMENT_STATUSES } from "@/lib/documents/status";
 
 export const metadata: Metadata = {
@@ -148,6 +150,14 @@ export default function DesignPage() {
 
       <Block title="FeatureGrid" path="components/marketing/feature-grid.tsx">
         <FeatureGrid items={features.items.slice(0, 3)} />
+      </Block>
+
+      <Block title="AlternatingFeature" path="components/marketing/alternating-feature.tsx">
+        <AlternatingFeature items={highlights.items.slice(0, 2)} />
+      </Block>
+
+      <Block title="CheckList" path="components/marketing/check-list.tsx">
+        <CheckList items={useCases.tabs[0].bullets} />
       </Block>
     </Container>
   );

@@ -56,21 +56,23 @@ Tailwind `text-xl…text-sm` for UI. Headlines use `text-balance`; paragraphs `t
 - All scroll reveals go through `components/motion/Reveal` (fade + 24px rise, 0.6s, ease `[0.22,1,0.36,1]`, once).
 - Stagger children by 60–100ms. Hover lift: `y: -4`, shadow to `shadow-lift`, 200ms.
 - Tabs/showcases crossfade (`FadeSwap`), ≤ 300ms.
-- Respect `prefers-reduced-motion` (handled inside motion wrappers — never re-implement per component).
+- Respect `prefers-reduced-motion` (handled inside motion wrappers + the `[data-reveal]` rule in `globals.css` —
+  never re-implement per component; see ADR-009).
+- Never scroll-reveal above-the-fold LCP content (hero / page headlines) — it must paint without JS.
 - No motion on data-dense app screens beyond 150ms state transitions.
 
 ## Component layers
 
 See [CONVENTIONS.md](CONVENTIONS.md#componentization) for rules. Inventory:
 
-| Layer                  | Components (✓ = exists)                                                                                                                                                                      |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `components/ui`        | ✓ button, input, card, badge, dialog, dropdown-menu, sonner (+ add via `npx shadcn add`)                                                                                                     |
-| `components/brand`     | ✓ PillButton, ✓ StickyNote, ✓ BoardCanvas, ✓ YellowMarker, ✓ Logo, ✓ SectionHeading/Eyebrow                                                                                                  |
-| `components/motion`    | ✓ Reveal, Stagger, HoverLift, FadeSwap                                                                                                                                                       |
-| `components/marketing` | SiteHeader, MegaMenu, Hero, LogoStrip, UseCaseTabs, FeatureGrid, Testimonial, PricingCards, PricingTable, FAQ, CtaBand, SiteFooter                                                           |
-| `components/app`       | AppSidebar, TopBar, OrgSwitcher, PageHeader, EmptyState, DataTable, StatusBadge, ConfidencePill, IssueBanner, FileDropzone, UploadTray, DocumentPreview, MoneyCell, EntityPicker, UsageMeter |
-| `pdf/components`       | ReportHeader, ReportTable, TotalsBlock, PageFooter, BrandBar                                                                                                                                 |
+| Layer                  | Components (✓ = exists)                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components/ui`        | ✓ button, input, card, badge, dialog, dropdown-menu, sonner (+ add via `npx shadcn add`)                                                                                                                                                                                                                                                                                                                                                  |
+| `components/brand`     | ✓ PillButton, ✓ StickyNote, ✓ BoardCanvas, ✓ YellowMarker, ✓ Logo, ✓ SectionHeading/Eyebrow, ✓ Section/Container, ✓ SegmentedToggle, ✓ CollabCursor                                                                                                                                                                                                                                                                                       |
+| `components/motion`    | ✓ Reveal, ✓ Stagger, ✓ HoverLift, ✓ FadeSwap, ✓ Float, ✓ MotionProvider                                                                                                                                                                                                                                                                                                                                                                   |
+| `components/marketing` | ✓ SiteHeader (HeaderShell, DesktopNav mega-menu, MobileNav), ✓ Hero, ✓ LogoStrip, ✓ UseCaseTabs, ✓ FeatureGrid, ✓ AlternatingFeature, ✓ CheckList, ✓ Testimonial, ✓ StatsRow, ✓ PersonaCards, ✓ WorkflowSteps, ✓ PricingCards, ✓ PricingTable, ✓ Faq, ✓ TrustGrid, ✓ CalloutBand, ✓ ResourceLinks, ✓ CtaBand, ✓ AnnouncementBar, ✓ SiteFooter, ✓ MarketingSection, ✓ IndustryPage, ✓ EmailCtaForm, ✓ AuthAside, `visuals/*` board mockups |
+| `components/app`       | AppSidebar, TopBar, OrgSwitcher, PageHeader, EmptyState, DataTable, StatusBadge, ConfidencePill, IssueBanner, FileDropzone, UploadTray, DocumentPreview, MoneyCell, EntityPicker, UsageMeter                                                                                                                                                                                                                                              |
+| `pdf/components`       | ReportHeader, ReportTable, TotalsBlock, PageFooter, BrandBar                                                                                                                                                                                                                                                                                                                                                                              |
 
 ## Page mapping (Miro reference → DocuMax)
 

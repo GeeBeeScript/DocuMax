@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type {
+  AlternatingFeatureContent,
   CtaContent,
   Feature,
   HeroContent,
@@ -38,7 +39,14 @@ export const homeHero = {
 // PLACEHOLDER: fictional company names — replace with real customers (with permission) before launch.
 export const logoStrip = {
   heading: "Built for teams that run on paperwork",
-  names: ["Northwind Properties", "Harbor & Pine", "Keystone Homes", "BlueRidge Services", "Oakline PM", "Summit Trades"],
+  names: [
+    "Northwind Properties",
+    "Harbor & Pine",
+    "Keystone Homes",
+    "BlueRidge Services",
+    "Oakline PM",
+    "Summit Trades",
+  ],
 };
 
 export const useCases = {
@@ -96,6 +104,43 @@ export const useCases = {
   ],
 } satisfies SectionIntro & { tabs: UseCaseTab[] };
 
+/** Alternating image/text blocks under the showcase (Miro home pattern). */
+export const highlights = {
+  eyebrow: "Why teams switch",
+  title: "Trust the numbers without retyping them",
+  items: [
+    {
+      eyebrow: "Checked, not guessed",
+      title: "AI reads. Code does the math.",
+      description:
+        "DocuMax extracts every field into a fixed format, then recalculates totals and tax itself. If the numbers on the page don't add up, you'll know before anyone else does.",
+      bullets: [
+        "Line items re-summed and compared with the invoice total",
+        "Tax checked against the subtotal, to the cent",
+        "Low-confidence fields highlighted for a second look",
+      ],
+      visual: "extract",
+    },
+    {
+      eyebrow: "Human in the loop",
+      title: "Review only what needs a human",
+      description:
+        "Clean documents flow straight through. Duplicates, missing dates and suspicious totals land in a focused queue your team clears in minutes.",
+      bullets: ["Every issue explained in plain language", "Corrections and approvals logged with a reason"],
+      link: { label: "Explore review", href: "/#how-it-works" },
+      visual: "review",
+    },
+    {
+      eyebrow: "Client-ready output",
+      title: "Statements that look like you made them by hand",
+      description:
+        "Your logo, your colors, page numbers and tables that break cleanly across pages — for one property or job, or the whole month in a batch.",
+      link: { label: "See pricing", href: "/pricing" },
+      visual: "report",
+    },
+  ],
+} satisfies SectionIntro & { items: AlternatingFeatureContent[] };
+
 /** Product capability facts — not customer metrics. */
 export const stats = [
   { value: "< 60 s", label: "typical time from upload to checked data" },
@@ -144,7 +189,8 @@ export const features = {
     {
       icon: ShieldCheck,
       title: "Secure by design",
-      description: "Each organization's data is isolated at the database level, with roles for every teammate.",
+      description:
+        "Each organization's data is isolated at the database level, with roles for every teammate.",
     },
   ],
 } satisfies SectionIntro & { items: Feature[] };

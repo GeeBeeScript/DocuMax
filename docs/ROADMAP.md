@@ -6,8 +6,8 @@ tests and a Definition of Done (DoD). Update the **Status** column when a phase 
 | #   | Phase                                                    | Status     | Depends on |
 | --- | -------------------------------------------------------- | ---------- | ---------- |
 | 0   | [Foundation & governance](phases/00-foundation.md)       | ✅ Done    | —          |
-| 1   | [Design system & marketing site](phases/01-marketing.md) | ⏳ Next    | 0          |
-| 2   | [Auth, orgs, roles & tenancy](phases/02-tenancy.md)      | ⬜ Planned | 0          |
+| 1   | [Design system & marketing site](phases/01-marketing.md) | ✅ Done    | 0          |
+| 2   | [Auth, orgs, roles & tenancy](phases/02-tenancy.md)      | ⏳ Next    | 0          |
 | 3   | [Entities & uploads](phases/03-uploads.md)               | ⬜ Planned | 2          |
 | 4   | [Text extraction & OCR](phases/04-text-extraction.md)    | ⬜ Planned | 3          |
 | 5   | [AI extraction](phases/05-ai-extraction.md)              | ⬜ Planned | 4          |
