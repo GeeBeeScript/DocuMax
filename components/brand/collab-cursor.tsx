@@ -14,7 +14,12 @@ const labelVariants = cva("rounded-full px-2 py-0.5 text-xs font-semibold whites
   defaultVariants: { color: "ink" },
 });
 
-const fills = { ink: "fill-ink", yellow: "fill-yellow", pink: "fill-note-pink", blue: "fill-note-blue" } as const;
+const fills = {
+  ink: "fill-ink",
+  yellow: "fill-yellow",
+  pink: "fill-note-pink",
+  blue: "fill-note-blue",
+} as const;
 
 export type CollabCursorProps = ComponentProps<"div"> &
   VariantProps<typeof labelVariants> & {

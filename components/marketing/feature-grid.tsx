@@ -8,14 +8,22 @@ import { cn } from "@/lib/utils";
 export function FeatureCard({ feature, className }: { feature: Feature; className?: string }) {
   const { icon: Icon, title, description, href } = feature;
   return (
-    <div className={cn("flex h-full flex-col gap-4 rounded-3xl border border-gray-200 bg-paper p-6 shadow-card", className)}>
+    <div
+      className={cn(
+        "flex h-full flex-col gap-4 rounded-3xl border border-gray-200 bg-paper p-6 shadow-card",
+        className,
+      )}
+    >
       <span className="flex size-12 items-center justify-center rounded-2xl bg-yellow text-ink">
         <Icon className="size-6" />
       </span>
       <h3 className="text-xl font-bold">{title}</h3>
       <p className="text-muted-foreground">{description}</p>
       {href && (
-        <Link href={href} className="mt-auto inline-flex items-center gap-1 font-semibold text-ink hover:underline">
+        <Link
+          href={href}
+          className="mt-auto inline-flex items-center gap-1 font-semibold text-ink hover:underline"
+        >
           Learn more <ArrowRight className="size-4" />
         </Link>
       )}

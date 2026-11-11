@@ -15,7 +15,10 @@ export function InvoiceMock({ supplier, number, date, lines, total, className }:
   return (
     <div
       aria-hidden
-      className={cn("w-56 rotate-[-3deg] rounded-md bg-paper p-4 text-[10px] text-ink shadow-note", className)}
+      className={cn(
+        "w-56 rotate-[-3deg] rounded-md bg-paper p-4 text-[10px] text-ink shadow-note",
+        className,
+      )}
     >
       <div className="flex items-start justify-between">
         <p className="font-heading text-xs font-bold">{supplier}</p>

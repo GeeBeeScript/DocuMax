@@ -55,7 +55,12 @@ export function PlanCard({ card, interval }: { card: PlanCardContent; interval: 
         {plan.documentsPerMonth === null
           ? "Custom document volume"
           : `${plan.documentsPerMonth.toLocaleString("en-US")} documents / month`}
-        {plan.seats !== null && <span className="font-normal text-muted-foreground"> · {plan.seats} {plan.seats === 1 ? "seat" : "seats"}</span>}
+        {plan.seats !== null && (
+          <span className="font-normal text-muted-foreground">
+            {" "}
+            · {plan.seats} {plan.seats === 1 ? "seat" : "seats"}
+          </span>
+        )}
       </p>
       <PillButton href={card.cta.href} variant={card.highlighted ? "primary" : "outline"} className="w-full">
         {card.cta.label}
@@ -76,7 +81,13 @@ export function PlanCard({ card, interval }: { card: PlanCardContent; interval: 
 }
 
 /** Monthly/yearly toggle + plan cards. Prices and caps come from lib/billing/plans. */
-export function PricingCards({ cards, className }: { cards: readonly PlanCardContent[]; className?: string }) {
+export function PricingCards({
+  cards,
+  className,
+}: {
+  cards: readonly PlanCardContent[];
+  className?: string;
+}) {
   const [interval, setInterval] = useState<BillingInterval>("yearly");
   const discount = yearlyDiscountPercent();
 

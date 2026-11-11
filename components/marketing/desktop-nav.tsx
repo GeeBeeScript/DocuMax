@@ -22,7 +22,9 @@ function MegaMenuPanel({ group }: { group: NavMenuGroup }) {
     <div className={cn("grid gap-6 p-6", group.featured ? "w-[720px] grid-cols-3" : "w-[560px] grid-cols-2")}>
       {group.columns.map((col) => (
         <div key={col.heading} className={cn(group.columns.length === 1 && "col-span-2")}>
-          <p className="mb-3 px-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">{col.heading}</p>
+          <p className="mb-3 px-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            {col.heading}
+          </p>
           <ul className={cn("grid gap-1", group.columns.length === 1 && "grid-cols-2")}>
             {col.items.map((item) => (
               <li key={item.label}>
@@ -50,7 +52,9 @@ function MegaMenuPanel({ group }: { group: NavMenuGroup }) {
           render={<Link href={group.featured.href} />}
           className="flex flex-col items-start justify-end gap-2 rounded-2xl bg-yellow p-5 hover:bg-yellow-hover"
         >
-          <span className="rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-paper">{group.featured.eyebrow}</span>
+          <span className="rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-paper">
+            {group.featured.eyebrow}
+          </span>
           <span className="font-heading text-lg font-bold text-ink">{group.featured.title}</span>
           <span className="text-sm text-ink-soft">{group.featured.description}</span>
           <span className="inline-flex items-center gap-1 text-sm font-semibold text-ink">
@@ -83,7 +87,10 @@ export function DesktopNav({
             </NavigationMenuItem>
           ) : (
             <NavigationMenuItem key={entry.label}>
-              <NavigationMenuLink render={<Link href={entry.href} />} className={cn(triggerClass, "inline-flex items-center")}>
+              <NavigationMenuLink
+                render={<Link href={entry.href} />}
+                className={cn(triggerClass, "inline-flex items-center")}
+              >
                 {entry.label}
               </NavigationMenuLink>
             </NavigationMenuItem>

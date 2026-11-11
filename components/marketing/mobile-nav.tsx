@@ -44,7 +44,9 @@ export function MobileNav({
                 <AccordionContent className="[&_a]:no-underline">
                   {entry.columns.map((col) => (
                     <div key={col.heading} className="mb-3">
-                      <p className="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">{col.heading}</p>
+                      <p className="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                        {col.heading}
+                      </p>
                       <ul>
                         {col.items.map((item) => (
                           <li key={item.label}>

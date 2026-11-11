@@ -64,7 +64,11 @@ export function AuthForm({ mode, defaultEmail = "" }: { mode: AuthMode; defaultE
             className="h-12 rounded-xl px-4"
           />
         </div>
-        <button type="submit" disabled={pending} className={cn(pillButtonVariants({ size: "lg" }), "mt-2 w-full")}>
+        <button
+          type="submit"
+          disabled={pending}
+          className={cn(pillButtonVariants({ size: "lg" }), "mt-2 w-full")}
+        >
           {copy.submit}
         </button>
         {mode === "signup" && <p className="text-xs text-muted-foreground">{authContent.signup.legal}</p>}

@@ -8,7 +8,8 @@ import type { ComparisonGroup, ComparisonValue, PlanCardContent } from "@/conten
 import { cn } from "@/lib/utils";
 
 function Cell({ value }: { value: ComparisonValue }) {
-  if (value === true) return <Check aria-label="Included" className="mx-auto size-5 text-ink" strokeWidth={2.5} />;
+  if (value === true)
+    return <Check aria-label="Included" className="mx-auto size-5 text-ink" strokeWidth={2.5} />;
   if (value === false) return <Minus aria-label="Not included" className="mx-auto size-4 text-gray-300" />;
   return <span className="text-sm font-medium">{value}</span>;
 }
@@ -65,7 +66,11 @@ export function PricingTable({
           {groups.map((g) => (
             <tbody key={g.title}>
               <tr>
-                <th colSpan={PLAN_IDS.length + 1} scope="colgroup" className="bg-gray-50 px-3 pt-6 pb-2 font-heading font-bold">
+                <th
+                  colSpan={PLAN_IDS.length + 1}
+                  scope="colgroup"
+                  className="bg-gray-50 px-3 pt-6 pb-2 font-heading font-bold"
+                >
                   {g.title}
                 </th>
               </tr>

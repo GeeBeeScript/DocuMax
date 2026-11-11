@@ -12,4 +12,11 @@ export const siteConfig = {
 } as const;
 
 /** Public marketing routes — used by the sitemap. */
-export const publicRoutes = ["/", "/pricing", "/property-managers", "/contractors", "/signup", "/login"] as const;
+export const publicRoutes = [
+  "/",
+  "/pricing",
+  "/property-managers",
+  "/contractors",
+  "/signup",
+  "/login",
+] as const;

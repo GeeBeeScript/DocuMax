@@ -19,7 +19,12 @@ export default function PricingPage() {
     <>
       <MarketingSection spacing="md" size="wide" className="pt-12 md:pt-20">
         <Reveal className="mb-10">
-          <SectionHeading as="h1" align="center" title={pricingHero.title} description={pricingHero.description} />
+          <SectionHeading
+            as="h1"
+            align="center"
+            title={pricingHero.title}
+            description={pricingHero.description}
+          />
         </Reveal>
         <PricingCards cards={planCards} />
       </MarketingSection>
