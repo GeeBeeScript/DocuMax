@@ -1,3 +1,4 @@
+import { AlternatingFeature } from "@/components/marketing/alternating-feature";
 import { CalloutBand } from "@/components/marketing/callout-band";
 import { CtaBand } from "@/components/marketing/cta-band";
 import { FeatureGrid } from "@/components/marketing/feature-grid";
@@ -13,6 +14,7 @@ import { UseCaseTabs } from "@/components/marketing/use-case-tabs";
 import {
   auditCallout,
   features,
+  highlights,
   homeCta,
   homeHero,
   homeTestimonial,
@@ -30,6 +32,9 @@ export default function HomePage() {
       <LogoStrip heading={logoStrip.heading} names={logoStrip.names} />
       <MarketingSection id="how-it-works" tone="canvas" intro={useCases} size="wide">
         <UseCaseTabs tabs={useCases.tabs} />
+      </MarketingSection>
+      <MarketingSection id="why-documax" intro={highlights}>
+        <AlternatingFeature items={highlights.items} />
       </MarketingSection>
       <MarketingSection tone="ink" spacing="md">
         <StatsRow stats={stats} />

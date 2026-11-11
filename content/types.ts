@@ -43,6 +43,15 @@ export interface UseCaseTab {
   visual: ShowcaseKind;
 }
 
+export interface AlternatingFeatureContent {
+  eyebrow?: string;
+  title: string;
+  description: string;
+  bullets?: string[];
+  link?: Link;
+  visual: ShowcaseKind;
+}
+
 export interface Stat {
   value: string;
   label: string;

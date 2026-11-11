@@ -1,8 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { ShieldCheck } from "lucide-react";
+import { AlternatingFeature } from "@/components/marketing/alternating-feature";
 import { AnnouncementBar } from "@/components/marketing/announcement-bar";
 import { CalloutBand } from "@/components/marketing/callout-band";
+import { CheckList } from "@/components/marketing/check-list";
 import { CtaBand } from "@/components/marketing/cta-band";
 import { EmailCtaForm } from "@/components/marketing/email-cta-form";
 import { Faq } from "@/components/marketing/faq";
@@ -21,7 +23,17 @@ import { Testimonial } from "@/components/marketing/testimonial";
 import { TrustGrid } from "@/components/marketing/trust-grid";
 import { UseCaseTabs } from "@/components/marketing/use-case-tabs";
 import { WorkflowSteps } from "@/components/marketing/workflow-steps";
-import { features, homeCta, homeHero, homeTestimonial, personas, resources, stats, useCases } from "@/content/marketing";
+import {
+  features,
+  highlights,
+  homeCta,
+  homeHero,
+  homeTestimonial,
+  personas,
+  resources,
+  stats,
+  useCases,
+} from "@/content/marketing";
 import { comparison, planCards, pricingFaq, security } from "@/content/pricing";
 import { propertyManagers } from "@/content/industries";
 import { SHOWCASE_KINDS } from "@/content/types";
@@ -107,6 +119,24 @@ describe("static marketing blocks", () => {
     expect(container.firstChild).not.toBeEmptyDOMElement();
   });
 
+  it("AlternatingFeature renders a row per item and flips every other row", () => {
+    render(<AlternatingFeature items={highlights.items} />);
+    const rows = screen
+      .getAllByRole("listitem")
+      .filter((li) => li.parentElement?.tagName === "UL" && li.querySelector("h3"));
+    expect(rows).toHaveLength(highlights.items.length);
+    for (const item of highlights.items) {
+      expect(screen.getByRole("heading", { level: 3, name: item.title })).toBeInTheDocument();
+    }
+    expect(rows[0].firstElementChild).not.toHaveClass("lg:order-2");
+    expect(rows[1].firstElementChild).toHaveClass("lg:order-2");
+  });
+
+  it("CheckList renders every item", () => {
+    render(<CheckList items={["One", "Two"]} />);
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  });
+
   it("SiteFooter renders column navs", () => {
     render(<SiteFooter />);
     expect(screen.getByRole("navigation", { name: "Product" })).toBeInTheDocument();
@@ -129,6 +159,20 @@ describe("UseCaseTabs", () => {
     fireEvent.click(screen.getByRole("tab", { name: /Review/ }));
     expect(screen.getByRole("tab", { name: /Review/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { name: useCases.tabs[2].heading })).toBeInTheDocument();
+  });
+
+  it("moves between tabs with the arrow keys", async () => {
+    render(<UseCaseTabs tabs={useCases.tabs} />);
+    const [first, second] = screen.getAllByRole("tab");
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+    await waitFor(() => expect(second).toHaveFocus());
+    expect(second).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: useCases.tabs[1].heading })).toBeInTheDocument();
+
+    fireEvent.keyDown(second, { key: "ArrowLeft" });
+    await waitFor(() => expect(first).toHaveFocus());
+    expect(first).toHaveAttribute("aria-selected", "true");
   });
 });
 

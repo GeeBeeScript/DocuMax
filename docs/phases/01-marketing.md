@@ -1,4 +1,4 @@
-# Phase 1 — Design system & marketing site
+# Phase 1 — Design system & marketing site ✅
 
 **Goal:** a Miro-faithful marketing site for both personas, built entirely from reusable section components.
 
@@ -32,3 +32,17 @@
 - Render test per marketing block; behavior tests for `SiteHeader` (menu open/close, keyboard), `UseCaseTabs`
   (tab switching, arrow keys), `PricingCards` (toggle updates prices).
 - E2E: navigate landing → pricing → signup CTA.
+
+## Completion evidence (2026-11-11)
+
+- [x] All scope items built; landing order: Hero → LogoStrip → UseCaseTabs → AlternatingFeature → Stats →
+      Testimonial → FeatureGrid → PersonaCards → Callout → Resources → CtaBand → SiteFooter.
+- [x] Persona pages are one `IndustryPage` component fed by `content/industries.ts`.
+- [x] Lighthouse 12.8 (mobile, production build): Perf / A11y / SEO — `/` 90/100/100, `/pricing` 91/100/100,
+      `/property-managers` 92/100/100, `/contractors` 94/100/100, `/login` 98/100/100. CLS 0 on every page.
+- [x] No horizontal overflow at 360 / 768 / 1440 px on any marketing or auth page.
+- [x] Reduced motion respected (ADR-009) — covered by unit tests and an e2e test.
+- [x] Tests: render tests for every block; behavior tests for SiteHeader (`site-header.test.tsx`: scroll shadow,
+      mega-menu click/keyboard/Escape, mobile drawer), UseCaseTabs (click + arrow keys), PricingCards (toggle);
+      e2e `tests/e2e/marketing.spec.ts` (landing → pricing → signup, persona pages, mobile menu, reduced motion,
+      SEO routes). `npm run check` green.
