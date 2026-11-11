@@ -90,6 +90,18 @@ A table may be exempted only via an explicit allowlist in the test with a commen
    org, an insert payload an attacker would try, and a harmless update. The suite fails until you do.
 3. If the UI subscribes to it, add it to the `supabase_realtime` publication.
 
+### Column-level write limits (Phase 3)
+
+When users may edit only some columns of a tenant table (e.g. `documents`), revoke table-wide UPDATE from
+`authenticated` and grant UPDATE on the editable columns only; state changes go through security-definer
+functions that check role + current state. RLS still applies on top.
+
+### Realtime in the browser
+
+Authenticate the socket before joining a channel: `await supabase.realtime.setAuth(session.access_token)` (see
+`features/documents/hooks/use-document-status.ts`). A channel that joins as anon receives nothing, because RLS
+filters every row — easy to mistake for "realtime is broken".
+
 ### Implemented (Phase 2)
 
 - Suite: `tests/integration/tenancy/` — `isolation` (discovery, forced-RLS catalog check, checks 1–6, anonymous,

@@ -93,4 +93,7 @@ docs/                 Product, architecture and phase docs
 - Tailwind v4: tokens live in `app/globals.css` `@theme`; there is no `tailwind.config`.
 - zod is v4 (`z.url()`, `z.uuid()`, `z.iso.datetime()`).
 - The worker loads `.env.local` then `.env` (`worker/load-env.ts`); Next loads them itself.
+- Supabase Realtime in the browser: `await supabase.realtime.setAuth(token)` before subscribing, or RLS hides every event.
+- Values passed from a Server Component to a Client Component must be serializable — no functions or icon
+  components in props (copy objects with functions are read inside the client component instead).
 - When implementing AI calls (Phase 5), load the `claude-api` skill for current model IDs and structured-output usage.

@@ -16,15 +16,15 @@ Every **tenant table** has `org_id uuid not null references organizations(id) on
 
 ## Entities
 
-| Table      | Key columns                                                                                                                     |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `entities` | `org_id`, `kind` (`property`\|`job`), `name`, `code`, `address`, `client_name`, `status` (`active`\|`archived`), `meta jsonb` ✎ |
+| Table      | Key columns                                                                                                                                                                                                          |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `entities` | `org_id`, `kind` (`property`\|`job`, always = the org's `entity_kind`, set by trigger), `name`, `code` (unique per org, case-insensitive), `address`, `client_name`, `status` (`active`\|`archived`), `meta jsonb` ✎ |
 
 ## Documents & extraction
 
 | Table               | Key columns                                                                                                                                                                                                                                                                                                                                           |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `documents`         | `org_id`, `uploaded_by`, `entity_id?`, `storage_path`, `file_name`, `mime_type`, `size_bytes`, `sha256`, `page_count`, `status`, `error`, `attempts` ✎                                                                                                                                                                                                |
+| `documents`         | `org_id`, `uploaded_by`, `entity_id?` (same org, trigger-checked), `storage_path` (CHECK `{org_id}/documents/{id}/…`), `file_name`, `mime_type` (PDF/JPEG/PNG/WEBP/HEIC/HEIF), `size_bytes` (≤ 25 MB), `sha256`, `page_count`, `status`, `error`, `attempts` ✎ — users may update only `entity_id`/`file_name`                                        |
 | `document_pages`    | `org_id`, `document_id`, `page_no`, `text`, `source` (`text_layer`\|`ocr`), `ocr_confidence`                                                                                                                                                                                                                                                          |
 | `extractions`       | `org_id`, `document_id`, `model`, `provider`, `schema_version`, `raw jsonb`, `fields jsonb` (value+confidence per field), `latency_ms`, `tokens_in/out`                                                                                                                                                                                               |
 | `records`           | `org_id`, `document_id?`, `import_id?`, `entity_id?`, `supplier_name`, `supplier_tax_id`, `invoice_number`, `issue_date`, `due_date`, `currency`, `subtotal_cents`, `tax_cents`, `tax_rate`, `total_cents`, `category`, `status` (`needs_review`\|`approved`\|`rejected`), `min_confidence`, `field_confidence jsonb`, `approved_by`, `approved_at` ✎ |
@@ -39,6 +39,14 @@ uploading → queued → extracting → analyzing → validating → needs_revie
                                                          ↘ ready
                  (any) → failed  (retryable → queued)
 ```
+
+Status changes go through functions, never a plain UPDATE (Phase 3):
+
+| Function                                    | Who          | Transition                                                       |
+| ------------------------------------------- | ------------ | ---------------------------------------------------------------- |
+| `confirm_document_upload(doc)`              | writers      | `uploading → queued` (attempts + 1); idempotent                  |
+| `retry_document(doc)`                       | writers      | `failed → queued` (attempts + 1)                                 |
+| `transition_document(org, doc, from[], to)` | service role | any step, only if current status ∈ `from`; audited as the worker |
 
 `records.status`: `needs_review` → `approved` | `rejected` (reviewers may reopen → `needs_review`).
 
