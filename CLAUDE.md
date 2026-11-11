@@ -22,6 +22,8 @@ Next.js 15 (App Router, RSC) · TypeScript strict · Tailwind v4 · shadcn/ui (B
 | Queue round-trip test | `npm run queue:ping`                                             |
 | Local Supabase        | `npx supabase start` / `npx supabase status`                     |
 | All checks            | `npm run check` (lint + typecheck + unit tests)                  |
+| Integration tests     | `npm run test:integration` (needs local Supabase running)        |
+| DB reset / types      | `npm run db:reset` / `npm run db:types`                          |
 | Unit tests            | `npm test`                                                       |
 | E2E                   | `npm run e2e`                                                    |
 | Format                | `npm run format`                                                 |

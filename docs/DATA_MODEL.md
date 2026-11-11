@@ -7,12 +7,12 @@ Every **tenant table** has `org_id uuid not null references organizations(id) on
 
 ## Identity & tenancy
 
-| Table           | Key columns                                                                                                                                           |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `organizations` | `name`, `slug` (unique), `entity_kind` (`property`\|`job`), `logo_path`, `brand_color`, `default_currency`, `review_threshold numeric default 0.85` ✎ |
-| `profiles`      | `id = auth.users.id`, `full_name`, `avatar_path`, `last_org_id`                                                                                       |
-| `memberships`   | `org_id`, `user_id`, `role` (`owner`\|`admin`\|`reviewer`\|`member`\|`viewer`), unique(org_id,user_id) ✎                                              |
-| `invites`       | `org_id`, `email`, `role`, `token_hash`, `expires_at`, `accepted_at` ✎                                                                                |
+| Table           | Key columns                                                                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `organizations` | `name`, `slug` (unique), `entity_kind` (`property`\|`job`), `logo_path`, `brand_color`, `default_currency`, `review_threshold numeric default 0.85`, `created_by` ✎ — created only via `create_organization()` |
+| `profiles`      | `id = auth.users.id`, `email` (synced from auth), `full_name`, `avatar_path`, `last_org_id` — created by a trigger on `auth.users`                                                                             |
+| `memberships`   | `org_id`, `user_id → profiles`, `role` (`owner`\|`admin`\|`reviewer`\|`member`\|`viewer`), unique(org_id,user_id) ✎ — inserted only by RPCs; always ≥ 1 owner                                                  |
+| `invites`       | `org_id`, `email` (lower-case), `role` (never `owner`), `token_hash` (sha256), `invited_by`, `expires_at` (7 days), `accepted_at`; one open invite per email ✎                                                 |
 
 ## Entities
 
@@ -71,9 +71,21 @@ Plan caps are defined in code (`lib/billing/plans.ts`) and mirrored in Stripe pr
 
 ## Audit
 
-| Table       | Key columns                                                                                                                                                                                                                                        |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `audit_log` | `org_id`, `actor_id` (from `auth.uid()` or `app.actor_id` setting for worker), `table_name`, `row_id`, `action` (`insert`\|`update`\|`delete`), `before jsonb`, `after jsonb`, `diff jsonb`, `created_at`. Append-only: no update/delete policies. |
+| Table       | Key columns                                                                                                                                                                                                                                                                                                      |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `audit_log` | `org_id`, `actor_id` (from `auth.uid()` or `app.actor_id` setting for worker), `table_name`, `row_id text`, `action` (`insert`\|`update`\|`delete`), `before jsonb`, `after jsonb`, `diff jsonb`, `created_at`. Append-only: no update/delete policies; readable by owners/admins. No-op updates are not logged. |
 
 The generic trigger `audit_row_change()` is attached to every ✎ table. The worker sets
 `set_config('app.actor_id', <system-or-user>, true)` inside its transactions so automated changes are attributed.
+
+## Tenancy functions (Phase 2)
+
+| Function                                         | Purpose                                                                                  |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `is_org_member(org)`, `has_org_role(org, roles)` | RLS helpers (security definer)                                                           |
+| `shares_org_with(user)`                          | Profile visibility between teammates                                                     |
+| `storage_org_id(path)`                           | `{org_id}/…` prefix → uuid (null if not a uuid) for storage policies                     |
+| `create_organization(name, entity_kind)`         | Creates org + owner membership, unique slug, sets `last_org_id`                          |
+| `accept_invite(token)`                           | Validates hash/expiry/email, adds membership with the invited role                       |
+| `invite_preview(token)`                          | Org name, role, email, expired/accepted flags — nothing else (used by `/invite/[token]`) |
+| Triggers                                         | `set_updated_at`, `prevent_org_change`, `audit_row_change`, `guard_membership_change`    |

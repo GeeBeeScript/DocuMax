@@ -64,3 +64,21 @@ reducedMotion="user"` since they never server-render hidden. **Why:** the server
 The previous approach (`useReducedMotion()` → render a plain `div`) hydrated over the server's inline
 `opacity: 0`, which React does not patch, so reduced-motion users saw blank sections. The CSS rule also works
 before JS loads. Corollary: above-the-fold LCP content (hero/pricing headlines) is never wrapped in `Reveal`.
+
+## ADR-010 — Invites are shareable one-time links (no email delivery yet)
+
+**Status:** Accepted (2026-11-11)
+Inviting a teammate creates an `invites` row (sha256 of a 192-bit token, 7-day expiry, never the owner role) and
+shows the `/invite/{token}` link to the inviter to share. Accepting requires signing in with the invited email
+(`accept_invite()` checks the JWT email). **Why:** transactional email needs a provider decision (Resend/Postmark/
+SES) and DNS setup that don't belong in the tenancy phase. Sending the same link by email is an additive change
+(Phase 11 hardening or earlier if needed); the token, hashing and accept path stay as they are.
+
+## ADR-011 — Org and membership creation only through security-definer RPCs
+
+**Status:** Accepted (2026-11-11)
+`organizations` and `memberships` have no INSERT policy; end users create them only via `create_organization()`
+and `accept_invite()`. Ownership invariants (only owners grant/revoke owner; at least one owner) are enforced by
+the `guard_membership_change` trigger rather than in Server Actions. **Why:** an INSERT policy on memberships
+would have to be clever enough to stop "add myself as owner of org X"; with no policy at all that class of bug
+can't exist, and the trigger keeps the invariants true for every client (UI, API, SQL), not just our actions.
