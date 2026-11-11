@@ -12,7 +12,14 @@ export default defineConfig({
     globals: false,
     setupFiles: ["./tests/setup/vitest.setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "tests/e2e/**", "tests/integration/**"],
+    // *.slow.test.ts (real OCR) only run with SLOW_TESTS=1 (`npm run test:slow`).
+    exclude: [
+      "node_modules",
+      ".next",
+      "tests/e2e/**",
+      "tests/integration/**",
+      ...(process.env.SLOW_TESTS ? [] : ["**/*.slow.test.ts"]),
+    ],
     css: false,
   },
 });
