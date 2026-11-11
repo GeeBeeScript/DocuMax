@@ -25,6 +25,7 @@ Next.js 15 (App Router, RSC) · TypeScript strict · Tailwind v4 · shadcn/ui (B
 | Integration tests     | `npm run test:integration` (needs local Supabase running)        |
 | DB reset / types      | `npm run db:reset` / `npm run db:types`                          |
 | Unit tests            | `npm test`                                                       |
+| Slow OCR tests        | `npm run test:slow` (real Tesseract on fixtures)                 |
 | E2E                   | `npm run e2e`                                                    |
 | Format                | `npm run format`                                                 |
 

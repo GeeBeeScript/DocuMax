@@ -14,7 +14,7 @@
 | `lib/calc/*`       | Exhaustive unit tests incl. rounding, negatives (credit notes), zero, large values, property-based tests for allocation sums (`fast-check`)  |
 | `lib/validation/*` | One test per rule, positive + negative + tolerance edges                                                                                     |
 | `lib/ai/*`         | Schema parsing of recorded model outputs (fixtures); no live API calls in CI                                                                 |
-| `lib/pipeline/*`   | Text-layer vs OCR routing using fixtures; OCR test marked slow                                                                               |
+| `lib/pipeline/*`   | Text-layer vs OCR routing using fixtures; OCR tests in `*.slow.test.ts` (`npm run test:slow`)                                                |
 | Tenancy            | Full isolation suite (see [MULTI_TENANCY.md](MULTI_TENANCY.md)) — **must pass for every merge** from Phase 2 on                              |
 | Components         | Render test per brand/marketing/app component; behavior tests for interactive ones                                                           |
 | Server Actions     | Integration tests for role checks and audit entries                                                                                          |
@@ -47,3 +47,10 @@ Both need local Supabase: `npx supabase start`, then put the URL, anon key and s
   recorded (and zod-validated) instead of hitting Redis — assert on `enqueued()`.
 - If `supabase start` cannot pull from `public.ecr.aws` (restricted networks), set
   `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io` to pull the same images from Docker Hub.
+
+## Pipeline fixtures
+
+`tests/fixtures/generate.mjs` (+ `encrypt.py` for the password-protected PDF) regenerates every fixture from
+synthetic content: digital, scanned 3-page, mixed, phone photo (sideways, EXIF orientation 6), corrupt and
+password-protected PDFs. `PW_CHROMIUM=/path/to/chrome` points it at a preinstalled browser. Slow OCR tests assert
+key strings per fixture and the < 30 s budget for the 3-page scan.

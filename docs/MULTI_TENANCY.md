@@ -100,7 +100,8 @@ functions that check role + current state. RLS still applies on top.
 
 Authenticate the socket before joining a channel: `await supabase.realtime.setAuth(session.access_token)` (see
 `features/documents/hooks/use-document-status.ts`). A channel that joins as anon receives nothing, because RLS
-filters every row — easy to mistake for "realtime is broken".
+filters every row — easy to mistake for "realtime is broken". Changes made while the channel is still joining are
+not delivered: re-fetch once `SUBSCRIBED`, and merge snapshots by `updated_at` so an older one never wins.
 
 ### Implemented (Phase 2)
 
