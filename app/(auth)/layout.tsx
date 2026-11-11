@@ -7,7 +7,7 @@ import { authContent } from "@/content/auth";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      <div className="flex flex-col px-4 py-6 sm:px-10">
+      <div className="flex min-w-0 flex-col px-4 py-6 sm:px-10">
         <Link href="/" aria-label="DocuMax home" className="self-start">
           <Logo />
         </Link>
