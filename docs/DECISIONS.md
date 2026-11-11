@@ -82,3 +82,13 @@ and `accept_invite()`. Ownership invariants (only owners grant/revoke owner; at 
 the `guard_membership_change` trigger rather than in Server Actions. **Why:** an INSERT policy on memberships
 would have to be clever enough to stop "add myself as owner of org X"; with no policy at all that class of bug
 can't exist, and the trigger keeps the invariants true for every client (UI, API, SQL), not just our actions.
+
+## ADR-012 — Document status changes only through status-checked functions
+
+**Status:** Accepted (2026-11-12)
+Users can UPDATE only `documents.entity_id` and `file_name` (column grants). `uploading → queued` and
+`failed → queued` go through `confirm_document_upload()` / `retry_document()`; the worker moves documents with
+`transition_document(org, doc, from[], to)` (service role only), which updates only if the current status is in
+`from` and sets `app.actor_id` so the audit log names the worker. **Why:** the status machine and attempt counter
+stay consistent whatever the client does, and duplicate or late jobs can't move a document backwards — the
+idempotency the queue design requires is enforced in one place.

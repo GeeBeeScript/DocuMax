@@ -102,3 +102,15 @@ All arithmetic uses `lib/calc`. Normalization (supplier names, invoice numbers) 
   shortcuts (`A` approve, `R` reject, `J/K` next/prev, `E` edit field).
 - Corrections re-run validation instantly (same `lib/validation` code client- and server-side).
 - Every approve/reject/correct writes `review_actions` (with optional reason) and is captured by the audit trigger.
+
+## Phase 3 stub and guard rails
+
+Until Phases 4–6 land, `worker/processors/process-document.ts` walks `queued → extracting → analyzing →
+validating → ready` with `STUB_STEP_MS` pauses (default 800 ms) so the UI runs against real, live status changes.
+The parts that stay when real stages replace the pauses:
+
+- `forOrg(db, orgId).requireRow("documents", id)` — the payload's org must own the document.
+- The file must exist in Storage, else the document fails with a clear message.
+- Every step is `transition_document(org, doc, [from], to)`: a stale or duplicate job gets `null` back and stops,
+  so retries are idempotent. Job ids are `{documentId}-{attempts}` (one job per attempt).
+- After the last BullMQ attempt fails, `markDocumentFailed` records the error on the document.

@@ -70,6 +70,11 @@ sequenceDiagram
 
 Details: [DOCUMENT_PIPELINE.md](DOCUMENT_PIPELINE.md).
 
+Implemented in Phase 3 as: `requestUpload` (zod-validated metadata, sha256 duplicate hint, signed upload URL created
+with the **user's** client so storage policies apply, then the `uploading` row) → browser `PUT` with progress (3 at a
+time) → `confirmUpload` (checks the stored object's size, `confirm_document_upload()`, `enqueue`). The usage-cap
+check shown above arrives with billing (Phase 10).
+
 ## Queues
 
 | Queue              | Payload                 | Purpose                                |

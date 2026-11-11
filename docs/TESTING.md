@@ -41,5 +41,9 @@ Both need local Supabase: `npx supabase start`, then put the URL, anon key and s
   time (`fileParallelism: false`).
 - The isolation suite was verified to fail when a permissive policy or un-forced RLS is planted — keep it that way
   when changing it (plant a leak, see red, remove it).
+- E2E also needs Redis (`docker compose up -d redis`); Playwright starts the worker itself with fast stub steps
+  (`STUB_STEP_MS=150`). Fixtures: `tests/fixtures/pdf/sample-invoice-3-pages.pdf`, `tests/fixtures/images/sample-receipt.png`.
+- Server Actions are tested as real users via `tests/integration/next-mocks.ts` (`actAs(user)`); `enqueue()` is
+  recorded (and zod-validated) instead of hitting Redis — assert on `enqueued()`.
 - If `supabase start` cannot pull from `public.ecr.aws` (restricted networks), set
   `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io` to pull the same images from Docker Hub.
