@@ -66,7 +66,9 @@ async function imagePdf(page, images, textPages = {}) {
 }
 
 // PW_CHROMIUM lets environments with a preinstalled browser point at it.
-const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
+const browser = await chromium.launch(
+  process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {},
+);
 const page = await browser.newPage();
 await mkdir(out("pdf"), { recursive: true });
 await mkdir(out("images"), { recursive: true });

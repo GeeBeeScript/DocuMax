@@ -71,6 +71,55 @@ export type Database = {
           },
         ];
       };
+      document_pages: {
+        Row: {
+          created_at: string;
+          document_id: string;
+          id: string;
+          ocr_confidence: number | null;
+          org_id: string;
+          page_no: number;
+          source: Database["public"]["Enums"]["page_source"];
+          text: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          document_id: string;
+          id?: string;
+          ocr_confidence?: number | null;
+          org_id: string;
+          page_no: number;
+          source: Database["public"]["Enums"]["page_source"];
+          text?: string;
+        };
+        Update: {
+          created_at?: string;
+          document_id?: string;
+          id?: string;
+          ocr_confidence?: number | null;
+          org_id?: string;
+          page_no?: number;
+          source?: Database["public"]["Enums"]["page_source"];
+          text?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "document_pages_document_id_fkey";
+            columns: ["document_id"];
+            isOneToOne: false;
+            referencedRelation: "documents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "document_pages_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       documents: {
         Row: {
           attempts: number;
@@ -464,6 +513,39 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      save_document_pages: {
+        Args: {
+          p_actor?: string;
+          p_document: string;
+          p_org: string;
+          p_page_count: number;
+          p_pages: Json;
+          p_sha256?: string;
+        };
+        Returns: {
+          attempts: number;
+          created_at: string;
+          entity_id: string | null;
+          error: string | null;
+          file_name: string;
+          id: string;
+          mime_type: string;
+          org_id: string;
+          page_count: number | null;
+          sha256: string | null;
+          size_bytes: number;
+          status: Database["public"]["Enums"]["document_status"];
+          storage_path: string;
+          updated_at: string;
+          uploaded_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       shares_org_with: { Args: { p_user: string }; Returns: boolean };
       slugify: { Args: { p_text: string }; Returns: string };
       storage_org_id: { Args: { p_name: string }; Returns: string };
@@ -516,6 +598,7 @@ export type Database = {
       entity_kind: "property" | "job";
       entity_status: "active" | "archived";
       org_role: "owner" | "admin" | "reviewer" | "member" | "viewer";
+      page_source: "text_layer" | "ocr";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -643,6 +726,7 @@ export const Constants = {
       entity_kind: ["property", "job"],
       entity_status: ["active", "archived"],
       org_role: ["owner", "admin", "reviewer", "member", "viewer"],
+      page_source: ["text_layer", "ocr"],
     },
   },
 } as const;

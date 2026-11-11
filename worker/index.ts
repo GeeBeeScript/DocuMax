@@ -1,6 +1,7 @@
 import "./load-env";
 import { Worker, type Job } from "bullmq";
 import { QUEUES, parseJob, redisConnection } from "@/lib/queue";
+import { createTesseractEngine } from "@/lib/pipeline/ocr";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { logger } from "./logger";
 import { markDocumentFailed, processDocument } from "./processors/process-document";
@@ -12,6 +13,11 @@ import { markDocumentFailed, processDocument } from "./processors/process-docume
 
 const db = createSupabaseAdminClient();
 const STUB_STEP_MS = Number(process.env.STUB_STEP_MS ?? 800);
+const OCR_WORKERS = Number(process.env.OCR_WORKERS ?? 2);
+
+// One Tesseract pool per process, reused by every job (language data ships in node_modules). Started now,
+// awaited by the first job (no top-level await: tsx runs this file as CommonJS).
+const ocrReady = createTesseractEngine({ workers: OCR_WORKERS });
 
 const health = new Worker(
   QUEUES.health,
@@ -30,11 +36,13 @@ const documents = new Worker(
     const payload = parseJob(QUEUES.processDocument, job.data);
     return processDocument(payload, {
       db,
+      ocr: await ocrReady,
       stepMs: STUB_STEP_MS,
       log: (message, meta) => logger.info(message, { jobId: job.id, ...meta }),
     });
   },
-  { connection: redisConnection(), concurrency: 4 },
+  // OCR is CPU-bound; more concurrent jobs than OCR workers only queues inside Tesseract.
+  { connection: redisConnection(), concurrency: OCR_WORKERS },
 );
 
 documents.on("failed", (job, err) => {
@@ -75,11 +83,12 @@ for (const w of workers) {
   w.on("error", (err) => logger.error("worker error", { queue: w.name, error: err.message }));
 }
 
-logger.info("worker started", { queues: workers.map((w) => w.name) });
+logger.info("worker started", { queues: workers.map((w) => w.name), ocrWorkers: OCR_WORKERS });
 
 async function shutdown(signal: string) {
   logger.info("shutting down", { signal });
   await Promise.all(workers.map((w) => w.close()));
+  await (await ocrReady).terminate();
   process.exit(0);
 }
 

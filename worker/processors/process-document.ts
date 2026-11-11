@@ -1,24 +1,26 @@
+import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { forOrg } from "@/lib/db/org-scope";
 import type { DocumentStatus } from "@/lib/documents/status";
+import { extractDocumentText } from "@/lib/pipeline/extract-document";
+import { isPipelineError } from "@/lib/pipeline/errors";
+import type { OcrEngine } from "@/lib/pipeline/ocr";
 import type { JobPayload } from "@/lib/queue";
 import type { Database } from "@/lib/supabase/database.types";
 
 /**
- * `process-document` — Phase 3 STUB. Walks the status machine with short pauses so the UI can be built
- * against real, live status changes. Phases 4–6 replace the middle stages with text extraction, AI
- * extraction and validation (docs/DOCUMENT_PIPELINE.md); the guard rails here stay:
- *   - the row must belong to the job's org (forOrg.requireRow),
- *   - the file must exist in Storage,
- *   - every transition is status-checked (transition_document), so retries are idempotent.
+ * `process-document` (docs/DOCUMENT_PIPELINE.md).
+ *   Stage 1 — text extraction (Phase 4): queued → extracting → [text layer / OCR → document_pages] → analyzing
+ *   Stages 2–3 — STUB until Phases 5–6: analyzing → validating → ready, with short pauses.
+ * Guard rails: the row must belong to the job's org (forOrg.requireRow); every transition is status-checked in
+ * the database, so duplicate/late jobs stop instead of moving a document backwards; permanent document problems
+ * (PipelineError) fail the document immediately with a readable message, anything else is retried by BullMQ.
  */
 
 export const WORKER_ACTOR_ID = "00000000-0000-0000-0000-000000000000";
 
-/** queued → extracting → analyzing → validating → ready */
+/** Placeholder for AI extraction (Phase 5) and validation (Phase 6). */
 export const STUB_STEPS: readonly (readonly [DocumentStatus, DocumentStatus])[] = [
-  ["queued", "extracting"],
-  ["extracting", "analyzing"],
   ["analyzing", "validating"],
   ["validating", "ready"],
 ];
@@ -27,6 +29,7 @@ const FINAL: DocumentStatus[] = ["ready", "needs_review", "failed"];
 
 export interface ProcessDeps {
   db: SupabaseClient<Database>;
+  ocr: OcrEngine;
   stepMs: number;
   sleep?: (ms: number) => Promise<void>;
   log?: (message: string, meta: Record<string, unknown>) => void;
@@ -56,29 +59,92 @@ async function transition(
   return data?.id ? data : null;
 }
 
+/** Stage 1. Returns the next status, or a terminal result. */
+async function extractStage(
+  payload: JobPayload<"process-document">,
+  doc: { storage_path: string; mime_type: string },
+  { db, ocr, log = () => undefined }: ProcessDeps,
+): Promise<ProcessResult | "analyzing"> {
+  const { orgId, documentId } = payload;
+  const fail = async (message: string): Promise<ProcessResult> => {
+    await transition(db, orgId, documentId, ["extracting"], "failed", message);
+    return { outcome: "failed", status: "failed" };
+  };
+
+  const download = await db.storage.from("documents").download(doc.storage_path);
+  if (download.error || !download.data) return fail("The uploaded file could not be found.");
+  const bytes = new Uint8Array(await download.data.arrayBuffer());
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+
+  const started = Date.now();
+  let result;
+  try {
+    result = await extractDocumentText(bytes, doc.mime_type, { ocr });
+  } catch (error) {
+    if (isPipelineError(error)) {
+      log("document cannot be read", { orgId, documentId, code: error.code });
+      return fail(error.message);
+    }
+    throw error; // transient → BullMQ retry
+  }
+  log("text extracted", {
+    orgId,
+    documentId,
+    pageCount: result.pageCount,
+    ocrPages: result.ocrPages,
+    ms: Date.now() - started,
+  });
+
+  const { data, error } = await db.rpc("save_document_pages", {
+    p_org: orgId,
+    p_document: documentId,
+    p_page_count: result.pageCount,
+    p_sha256: sha256,
+    p_actor: WORKER_ACTOR_ID,
+    p_pages: result.pages.map((p) => ({
+      page_no: p.pageNo,
+      text: p.text,
+      source: p.source,
+      ocr_confidence: p.ocrConfidence,
+    })),
+  });
+  if (error) throw error;
+  if (!data?.id) return { outcome: "skipped", status: "extracting" }; // moved on concurrently
+  return "analyzing";
+}
+
 export async function processDocument(
-  { orgId, documentId }: JobPayload<"process-document">,
-  { db, stepMs, sleep = defaultSleep, log = () => undefined }: ProcessDeps,
+  payload: JobPayload<"process-document">,
+  deps: ProcessDeps,
 ): Promise<ProcessResult> {
+  const { orgId, documentId } = payload;
+  const { db, stepMs, sleep = defaultSleep, log = () => undefined } = deps;
+
   const doc = await forOrg(db, orgId).requireRow("documents", documentId);
   if (FINAL.includes(doc.status) || doc.status === "uploading") {
     log("document not processable; skipping", { orgId, documentId, status: doc.status });
     return { outcome: "skipped", status: doc.status };
   }
 
-  const file = await db.storage.from("documents").info(doc.storage_path);
-  if (file.error || !file.data) {
-    await transition(db, orgId, documentId, [doc.status], "failed", "The uploaded file could not be found.");
-    return { outcome: "failed", status: "failed" };
+  let status: DocumentStatus = doc.status;
+  if (status === "queued") {
+    if (!(await transition(db, orgId, documentId, ["queued"], "extracting"))) {
+      return { outcome: "skipped", status };
+    }
+    status = "extracting";
   }
 
-  let status: DocumentStatus = doc.status;
+  // A retry after a crash mid-extraction resumes here too (status is still `extracting`).
+  if (status === "extracting") {
+    const next = await extractStage(payload, doc, deps);
+    if (next !== "analyzing") return next;
+    status = next;
+  }
+
   for (const [from, to] of STUB_STEPS) {
     if (from !== status) continue;
     await sleep(stepMs);
-    const moved = await transition(db, orgId, documentId, [from], to);
-    if (!moved) {
-      // Someone else moved it (another attempt, a retry). Stop rather than fight over it.
+    if (!(await transition(db, orgId, documentId, [from], to))) {
       log("document moved concurrently; stopping", { orgId, documentId, expected: from });
       return { outcome: "skipped", status };
     }

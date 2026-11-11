@@ -120,6 +120,33 @@ const SEEDERS: Record<string, Seeder> = {
     },
     update: { file_name: "renamed-by-intruder.pdf" },
   },
+  document_pages: {
+    async seed(ctx, orgId) {
+      const doc = await SEEDERS.documents.seed(ctx, orgId);
+      const { data, error } = await admin
+        .from("document_pages")
+        .insert({
+          org_id: orgId,
+          document_id: String(doc.id),
+          page_no: 1,
+          text: "seed",
+          source: "text_layer",
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    // Writing pages into someone else's document.
+    insertPayload: (_ctx, orgId) => ({
+      org_id: orgId,
+      document_id: rows.documents?.b.id,
+      page_no: 2,
+      text: "forged",
+      source: "text_layer",
+    }),
+    update: { text: "tampered" },
+  },
   audit_log: {
     seed: (_ctx, orgId) => one("audit_log", { org_id: orgId }),
     insertPayload: (_ctx, orgId) => ({
