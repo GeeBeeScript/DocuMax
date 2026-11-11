@@ -115,6 +115,8 @@ export const inviteCopy = {
   logIn: "I already have an account",
   wrongAccount: (email: string) =>
     `You're signed in with a different email. Log out and sign in as ${email} to accept.`,
+  back: "Back to DocuMax",
+  logOut: "Log out",
   invalid: {
     title: "This invite can't be used",
     description:
