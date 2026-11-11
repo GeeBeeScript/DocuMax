@@ -55,13 +55,21 @@ export const dashboardCopy = {
     },
     entities: {
       title: (plural: string) => `Set up your ${plural.toLowerCase()}`,
-      description: (plural: string) =>
-        `${plural} and document uploads arrive in the next release. Your workspace is ready for them.`,
+      description: (plural: string) => `${plural} are where costs land. Add them once, then assign uploads.`,
+      cta: (plural: string) => `Open ${plural.toLowerCase()}`,
+    },
+    upload: {
+      title: "Upload documents",
+      description: "Drop in invoices and receipts — many at once. DocuMax takes it from there.",
+      cta: "Upload documents",
     },
   },
+  recent: "Recent documents",
+  viewAll: "View all",
   empty: {
-    title: (plural: string) => `No ${plural.toLowerCase()} yet`,
-    description: "Once uploads are switched on, recent documents and statements will show up here.",
+    title: "No documents yet",
+    description: "Upload your first invoice or receipt and watch it get processed.",
+    cta: "Upload documents",
   },
 };
 

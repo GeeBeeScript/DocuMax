@@ -18,7 +18,11 @@ const meta = (bytes: Uint8Array, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 const put = (url: string, bytes: Uint8Array) =>
-  fetch(url, { method: "PUT", body: new Blob([bytes as BlobPart]), headers: { "content-type": "application/pdf" } });
+  fetch(url, {
+    method: "PUT",
+    body: new Blob([bytes as BlobPart]),
+    headers: { "content-type": "application/pdf" },
+  });
 const doc = async (id: string) => (await admin.from("documents").select("*").eq("id", id).single()).data;
 
 /** requestUpload → PUT → confirmUpload, returning the document id. */
