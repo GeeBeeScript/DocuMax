@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
-import { DocumentPreview } from "@/components/app/document-preview";
 import { PageHeader } from "@/components/app/page-header";
 import { PillButton } from "@/components/brand/pill-button";
 import { documentsCopy } from "@/content/app";
+import { DocumentViewer } from "@/features/documents/components/document-viewer";
 import { DocumentStatusPanel } from "@/features/documents/components/document-status-panel";
 import { getDocument } from "@/features/documents/queries";
 import { canWrite } from "@/lib/auth/roles";
@@ -61,12 +61,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           aria-label={doc.fileName}
           className="order-2 min-w-0 rounded-2xl border border-gray-200 bg-paper p-4 lg:order-1"
         >
-          <DocumentPreview
-            url={doc.fileUrl}
-            mimeType={doc.mimeType}
-            fileName={doc.fileName}
-            labels={documentsCopy.preview}
-          />
+          <DocumentViewer url={doc.fileUrl} mimeType={doc.mimeType} fileName={doc.fileName} />
         </section>
         <aside className="order-1 flex flex-col gap-5 rounded-2xl border border-gray-200 bg-paper p-5 lg:order-2">
           <DocumentStatusPanel

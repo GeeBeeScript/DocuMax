@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { checkUpload, formatBytes, MAX_UPLOAD_BYTES, resolveUploadType, storageFileName } from "./upload-rules";
+import {
+  checkUpload,
+  formatBytes,
+  MAX_UPLOAD_BYTES,
+  resolveUploadType,
+  storageFileName,
+} from "./upload-rules";
 
 describe("resolveUploadType", () => {
   it.each([
@@ -46,5 +52,9 @@ describe("storageFileName", () => {
 });
 
 it("formatBytes", () => {
-  expect([formatBytes(512), formatBytes(2048), formatBytes(5 * 1024 * 1024)]).toEqual(["512 B", "2 KB", "5.0 MB"]);
+  expect([formatBytes(512), formatBytes(2048), formatBytes(5 * 1024 * 1024)]).toEqual([
+    "512 B",
+    "2 KB",
+    "5.0 MB",
+  ]);
 });

@@ -78,7 +78,7 @@ export function EntityCollection({
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {entities.map((e) => (
-        <li key={e.id}>
+        <li key={e.id} className="min-w-0">
           <article className="flex h-full flex-col gap-3 rounded-2xl border border-gray-200 bg-paper p-5 shadow-card">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
