@@ -26,18 +26,53 @@ export const mainNav = [
       {
         heading: "How it works",
         items: [
-          { label: "Upload & OCR", href: "/#how-it-works", icon: Upload, description: "Bulk-drop PDFs and photos" },
-          { label: "AI extraction", href: "/#how-it-works", icon: Sparkles, description: "Fields with confidence scores" },
-          { label: "Review queue", href: "/#how-it-works", icon: ListChecks, description: "Approve, reject or correct" },
-          { label: "Statements & reports", href: "/#how-it-works", icon: FileText, description: "Branded multi-page PDFs" },
+          {
+            label: "Upload & OCR",
+            href: "/#how-it-works",
+            icon: Upload,
+            description: "Bulk-drop PDFs and photos",
+          },
+          {
+            label: "AI extraction",
+            href: "/#how-it-works",
+            icon: Sparkles,
+            description: "Fields with confidence scores",
+          },
+          {
+            label: "Review queue",
+            href: "/#how-it-works",
+            icon: ListChecks,
+            description: "Approve, reject or correct",
+          },
+          {
+            label: "Statements & reports",
+            href: "/#how-it-works",
+            icon: FileText,
+            description: "Branded multi-page PDFs",
+          },
         ],
       },
       {
         heading: "Platform",
         items: [
-          { label: "Exports & imports", href: "/#features", icon: FileSpreadsheet, description: "CSV and Excel in and out" },
-          { label: "Audit log", href: "/#features", icon: History, description: "Every change, every person" },
-          { label: "Security", href: "/#features", icon: ShieldCheck, description: "Data isolated per organization" },
+          {
+            label: "Exports & imports",
+            href: "/#features",
+            icon: FileSpreadsheet,
+            description: "CSV and Excel in and out",
+          },
+          {
+            label: "Audit log",
+            href: "/#features",
+            icon: History,
+            description: "Every change, every person",
+          },
+          {
+            label: "Security",
+            href: "/#features",
+            icon: ShieldCheck,
+            description: "Data isolated per organization",
+          },
         ],
       },
     ],
@@ -55,8 +90,18 @@ export const mainNav = [
       {
         heading: "By industry",
         items: [
-          { label: "Property managers", href: "/property-managers", icon: Building2, description: "Owner statements per property" },
-          { label: "Home-service contractors", href: "/contractors", icon: HardHat, description: "Job costing and quotes" },
+          {
+            label: "Property managers",
+            href: "/property-managers",
+            icon: Building2,
+            description: "Owner statements per property",
+          },
+          {
+            label: "Home-service contractors",
+            href: "/contractors",
+            icon: HardHat,
+            description: "Job costing and quotes",
+          },
         ],
       },
       {

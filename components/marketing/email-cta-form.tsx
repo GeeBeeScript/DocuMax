@@ -15,7 +15,13 @@ export type EmailCtaFormProps = {
 };
 
 /** Hero-style "email + Sign up" field. Hands off to the sign-up page with the email prefilled. */
-export function EmailCtaForm({ label, placeholder, action = "/signup", tone = "light", className }: EmailCtaFormProps) {
+export function EmailCtaForm({
+  label,
+  placeholder,
+  action = "/signup",
+  tone = "light",
+  className,
+}: EmailCtaFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
 
@@ -49,7 +55,10 @@ export function EmailCtaForm({ label, placeholder, action = "/signup", tone = "l
           tone === "dark" && "text-paper placeholder:text-paper/60",
         )}
       />
-      <button type="submit" className={pillButtonVariants({ variant: tone === "light" ? "primary" : "yellow", size: "md" })}>
+      <button
+        type="submit"
+        className={pillButtonVariants({ variant: tone === "light" ? "primary" : "yellow", size: "md" })}
+      >
         {label}
       </button>
     </form>

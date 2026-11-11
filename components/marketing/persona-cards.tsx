@@ -13,7 +13,13 @@ const bg = {
 } as const;
 
 /** Large sticky-note style cards linking to persona pages. */
-export function PersonaCards({ items, className }: { items: readonly PersonaCardContent[]; className?: string }) {
+export function PersonaCards({
+  items,
+  className,
+}: {
+  items: readonly PersonaCardContent[];
+  className?: string;
+}) {
   return (
     <Stagger as="ul" className={cn("grid gap-6 md:grid-cols-2", className)}>
       {items.map(({ icon: Icon, ...p }) => (

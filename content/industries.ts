@@ -1,13 +1,4 @@
-import {
-  CalendarClock,
-  Copy,
-  FileQuestion,
-  Receipt,
-  Scale,
-  Split,
-  TrendingDown,
-  Truck,
-} from "lucide-react";
+import { CalendarClock, Copy, FileQuestion, Receipt, Scale, Split, TrendingDown, Truck } from "lucide-react";
 import type { IndustryContent } from "./types";
 
 /**
@@ -38,20 +29,48 @@ export const propertyManagers = {
     eyebrow: "Sound familiar?",
     title: "Month-end shouldn't take a week",
     items: [
-      { icon: Receipt, title: "Paper everywhere", description: "Invoices arrive by email, mail and text — in every format imaginable." },
-      { icon: Split, title: "Shared costs", description: "One landscaping bill covers three buildings. Splitting it by hand invites mistakes." },
-      { icon: Copy, title: "Double-billing", description: "The same invoice sent twice slips through and an owner gets charged twice." },
-      { icon: CalendarClock, title: "Late statements", description: "Owners wait while your team keys in numbers instead of managing properties." },
+      {
+        icon: Receipt,
+        title: "Paper everywhere",
+        description: "Invoices arrive by email, mail and text — in every format imaginable.",
+      },
+      {
+        icon: Split,
+        title: "Shared costs",
+        description: "One landscaping bill covers three buildings. Splitting it by hand invites mistakes.",
+      },
+      {
+        icon: Copy,
+        title: "Double-billing",
+        description: "The same invoice sent twice slips through and an owner gets charged twice.",
+      },
+      {
+        icon: CalendarClock,
+        title: "Late statements",
+        description: "Owners wait while your team keys in numbers instead of managing properties.",
+      },
     ],
   },
   workflow: {
     eyebrow: "Your new month-end",
     title: "Four steps from inbox to owner",
     steps: [
-      { title: "Upload the month", description: "Drop every invoice and receipt in one go — PDFs, scans, photos." },
-      { title: "Match to properties", description: "DocuMax suggests the property from addresses on the document." },
-      { title: "Review the flags", description: "Duplicates, missing tax and mismatched totals wait in a queue." },
-      { title: "Send statements", description: "Batch-generate branded PDFs for every owner and download a ZIP." },
+      {
+        title: "Upload the month",
+        description: "Drop every invoice and receipt in one go — PDFs, scans, photos.",
+      },
+      {
+        title: "Match to properties",
+        description: "DocuMax suggests the property from addresses on the document.",
+      },
+      {
+        title: "Review the flags",
+        description: "Duplicates, missing tax and mismatched totals wait in a queue.",
+      },
+      {
+        title: "Send statements",
+        description: "Batch-generate branded PDFs for every owner and download a ZIP.",
+      },
     ],
   },
   useCases: {
@@ -62,7 +81,11 @@ export const propertyManagers = {
         id: "upload",
         label: "Collect",
         heading: "All your vendors, one inbox-free upload",
-        bullets: ["Bulk upload by property or all at once", "Phone photos of receipts welcome", "Live status per file"],
+        bullets: [
+          "Bulk upload by property or all at once",
+          "Phone photos of receipts welcome",
+          "Live status per file",
+        ],
         link: { label: "Start free", href: "/signup" },
         visual: "upload",
       },
@@ -70,7 +93,11 @@ export const propertyManagers = {
         id: "extract",
         label: "Extract",
         heading: "Costs categorized the way owners expect",
-        bullets: ["Repairs, utilities, landscaping, cleaning and more", "Tax and totals cross-checked", "Confidence on every field"],
+        bullets: [
+          "Repairs, utilities, landscaping, cleaning and more",
+          "Tax and totals cross-checked",
+          "Confidence on every field",
+        ],
         link: { label: "Start free", href: "/signup" },
         visual: "extract",
       },
@@ -78,7 +105,11 @@ export const propertyManagers = {
         id: "review",
         label: "Review",
         heading: "Catch the expensive mistakes",
-        bullets: ["Duplicate invoices flagged automatically", "Correct a field in seconds", "Full audit trail per property"],
+        bullets: [
+          "Duplicate invoices flagged automatically",
+          "Correct a field in seconds",
+          "Full audit trail per property",
+        ],
         link: { label: "Start free", href: "/signup" },
         visual: "review",
       },
@@ -86,7 +117,11 @@ export const propertyManagers = {
         id: "report",
         label: "Statement",
         heading: "A statement per property, per month",
-        bullets: ["Your logo and colors", "Category breakdown and line detail", "Batch every property into one ZIP"],
+        bullets: [
+          "Your logo and colors",
+          "Category breakdown and line detail",
+          "Batch every property into one ZIP",
+        ],
         link: { label: "Start free", href: "/signup" },
         visual: "report",
       },
@@ -120,8 +155,7 @@ export const propertyManagers = {
       },
       {
         question: "Can owners see their statements?",
-        answer:
-          "Statements are PDFs you send however you like today. An owner portal is on the roadmap.",
+        answer: "Statements are PDFs you send however you like today. An owner portal is on the roadmap.",
       },
       {
         question: "What if a document is handwritten or a blurry photo?",
@@ -161,20 +195,45 @@ export const contractors = {
     eyebrow: "Sound familiar?",
     title: "Profit leaks hide in the receipts",
     items: [
-      { icon: Truck, title: "Receipts in the truck", description: "Crumpled supply-house receipts never make it back to the office." },
-      { icon: FileQuestion, title: "Which job was that for?", description: "Materials get bought for three jobs on one ticket." },
-      { icon: TrendingDown, title: "Quotes based on guesses", description: "Without real job costs, the next quote is a coin flip." },
-      { icon: Scale, title: "Bookkeeping backlog", description: "Your bookkeeper chases you for paperwork every month." },
+      {
+        icon: Truck,
+        title: "Receipts in the truck",
+        description: "Crumpled supply-house receipts never make it back to the office.",
+      },
+      {
+        icon: FileQuestion,
+        title: "Which job was that for?",
+        description: "Materials get bought for three jobs on one ticket.",
+      },
+      {
+        icon: TrendingDown,
+        title: "Quotes based on guesses",
+        description: "Without real job costs, the next quote is a coin flip.",
+      },
+      {
+        icon: Scale,
+        title: "Bookkeeping backlog",
+        description: "Your bookkeeper chases you for paperwork every month.",
+      },
     ],
   },
   workflow: {
     eyebrow: "Your new paperwork routine",
     title: "From supply house to job report",
     steps: [
-      { title: "Snap or upload", description: "Photos from the job site, PDFs from email — all in one place." },
+      {
+        title: "Snap or upload",
+        description: "Photos from the job site, PDFs from email — all in one place.",
+      },
       { title: "Assign to jobs", description: "DocuMax suggests the job from references on the receipt." },
-      { title: "Check the flags", description: "Missing tax, duplicates and odd totals are queued for review." },
-      { title: "Report and quote", description: "Job cost statements and exports for your bookkeeper in one click." },
+      {
+        title: "Check the flags",
+        description: "Missing tax, duplicates and odd totals are queued for review.",
+      },
+      {
+        title: "Report and quote",
+        description: "Job cost statements and exports for your bookkeeper in one click.",
+      },
     ],
   },
   useCases: {
@@ -185,7 +244,11 @@ export const contractors = {
         id: "upload",
         label: "Capture",
         heading: "Every receipt, from anywhere",
-        bullets: ["Upload photos straight from your phone", "Bulk-drop supplier invoices", "Live processing status"],
+        bullets: [
+          "Upload photos straight from your phone",
+          "Bulk-drop supplier invoices",
+          "Live processing status",
+        ],
         link: { label: "Start free", href: "/signup" },
         visual: "upload",
       },
@@ -193,7 +256,11 @@ export const contractors = {
         id: "extract",
         label: "Extract",
         heading: "Materials and labor, line by line",
-        bullets: ["Line items with quantities and prices", "Categories like materials, labor and rentals", "Confidence on every field"],
+        bullets: [
+          "Line items with quantities and prices",
+          "Categories like materials, labor and rentals",
+          "Confidence on every field",
+        ],
         link: { label: "Start free", href: "/signup" },
         visual: "extract",
       },
@@ -209,7 +276,11 @@ export const contractors = {
         id: "report",
         label: "Job report",
         heading: "Job cost statements that win the next bid",
-        bullets: ["Costs per job and category", "Branded PDF or Excel export", "Batch reports for all active jobs"],
+        bullets: [
+          "Costs per job and category",
+          "Branded PDF or Excel export",
+          "Batch reports for all active jobs",
+        ],
         link: { label: "Start free", href: "/signup" },
         visual: "report",
       },

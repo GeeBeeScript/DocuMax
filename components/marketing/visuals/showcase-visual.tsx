@@ -9,7 +9,6 @@ import { ReviewMock } from "./review-mock";
 import { StatementMock } from "./statement-mock";
 import { UploadMock } from "./upload-mock";
 
-
 /**
  * Board-canvas product visual for one workflow step. Content files reference visuals by `kind`
  * so copy stays in /content and JSX stays in components.

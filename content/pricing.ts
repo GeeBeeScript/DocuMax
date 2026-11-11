@@ -6,7 +6,8 @@ import type { ComparisonGroup, FaqItem, PlanCardContent, SectionIntro, TrustBadg
 
 export const pricingHero = {
   title: "Simple plans that grow with your portfolio",
-  description: "Pay for the documents you process. Every plan includes review, audit log and branded statements.",
+  description:
+    "Pay for the documents you process. Every plan includes review, audit log and branded statements.",
 };
 
 function perPlan(pick: (plan: Plan) => number | null): Record<PlanId, string> {
@@ -82,28 +83,49 @@ export const comparison = [
     rows: [
       { label: "Documents per month", values: perPlan((p) => p.documentsPerMonth) },
       { label: "Bulk upload", values: { free: true, pro: true, business: true, enterprise: true } },
-      { label: "OCR for scans & photos", values: { free: true, pro: true, business: true, enterprise: true } },
-      { label: "Per-field confidence scores", values: { free: true, pro: true, business: true, enterprise: true } },
+      {
+        label: "OCR for scans & photos",
+        values: { free: true, pro: true, business: true, enterprise: true },
+      },
+      {
+        label: "Per-field confidence scores",
+        values: { free: true, pro: true, business: true, enterprise: true },
+      },
       { label: "Custom categories", values: { free: false, pro: false, business: true, enterprise: true } },
     ],
   },
   {
     title: "Review & validation",
     rows: [
-      { label: "Duplicate & total checks", values: { free: true, pro: true, business: true, enterprise: true } },
+      {
+        label: "Duplicate & total checks",
+        values: { free: true, pro: true, business: true, enterprise: true },
+      },
       { label: "Review queue", values: { free: true, pro: true, business: true, enterprise: true } },
-      { label: "Audit log", values: { free: "30 days", pro: "1 year", business: "Unlimited", enterprise: "Unlimited" } },
+      {
+        label: "Audit log",
+        values: { free: "30 days", pro: "1 year", business: "Unlimited", enterprise: "Unlimited" },
+      },
       { label: "Audit log export", values: { free: false, pro: false, business: true, enterprise: true } },
     ],
   },
   {
     title: "Reports & data",
     rows: [
-      { label: "Branded PDF statements", values: { free: true, pro: true, business: true, enterprise: true } },
-      { label: "Batch generation + ZIP", values: { free: false, pro: true, business: true, enterprise: true } },
+      {
+        label: "Branded PDF statements",
+        values: { free: true, pro: true, business: true, enterprise: true },
+      },
+      {
+        label: "Batch generation + ZIP",
+        values: { free: false, pro: true, business: true, enterprise: true },
+      },
       { label: "Cost allocations", values: { free: false, pro: true, business: true, enterprise: true } },
       { label: "CSV export", values: { free: true, pro: true, business: true, enterprise: true } },
-      { label: "Excel export & CSV import", values: { free: false, pro: true, business: true, enterprise: true } },
+      {
+        label: "Excel export & CSV import",
+        values: { free: false, pro: true, business: true, enterprise: true },
+      },
       { label: "Statement templates", values: { free: "1", pro: "1", business: "5", enterprise: "Custom" } },
     ],
   },
@@ -111,8 +133,14 @@ export const comparison = [
     title: "Team & security",
     rows: [
       { label: "Seats included", values: perPlan((p) => p.seats) },
-      { label: "Roles (owner, admin, reviewer, member, viewer)", values: { free: false, pro: true, business: true, enterprise: true } },
-      { label: "Organization-level data isolation", values: { free: true, pro: true, business: true, enterprise: true } },
+      {
+        label: "Roles (owner, admin, reviewer, member, viewer)",
+        values: { free: false, pro: true, business: true, enterprise: true },
+      },
+      {
+        label: "Organization-level data isolation",
+        values: { free: true, pro: true, business: true, enterprise: true },
+      },
       { label: "SSO", values: { free: false, pro: false, business: false, enterprise: "Roadmap" } },
     ],
   },
@@ -122,7 +150,10 @@ export const comparison = [
       { label: "Help center", values: { free: true, pro: true, business: true, enterprise: true } },
       { label: "Email support", values: { free: false, pro: true, business: true, enterprise: true } },
       { label: "Priority support", values: { free: false, pro: false, business: true, enterprise: true } },
-      { label: "Dedicated onboarding", values: { free: false, pro: false, business: false, enterprise: true } },
+      {
+        label: "Dedicated onboarding",
+        values: { free: false, pro: false, business: false, enterprise: true },
+      },
     ],
   },
 ] satisfies ComparisonGroup[];
@@ -170,7 +201,8 @@ export const pricingFaq = {
     },
     {
       question: "Can I cancel anytime?",
-      answer: "Yes. Cancel from your billing settings — your plan stays active until the end of the paid period.",
+      answer:
+        "Yes. Cancel from your billing settings — your plan stays active until the end of the paid period.",
     },
   ],
 } satisfies SectionIntro & { items: FaqItem[] };
