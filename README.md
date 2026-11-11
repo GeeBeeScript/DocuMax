@@ -25,15 +25,18 @@ npm run queue:ping                  # verify web → Redis → worker round-trip
 
 ## Scripts
 
-| Script               | What it does                   |
-| -------------------- | ------------------------------ |
-| `npm run dev`        | Next.js dev server (Turbopack) |
-| `npm run worker:dev` | BullMQ worker with watch mode  |
-| `npm run check`      | Lint + typecheck + unit tests  |
-| `npm test`           | Unit tests (Vitest)            |
-| `npm run e2e`        | Playwright end-to-end tests    |
-| `npm run format`     | Prettier                       |
-| `npm run build`      | Production build               |
+| Script                     | What it does                                           |
+| -------------------------- | ------------------------------------------------------ |
+| `npm run dev`              | Next.js dev server (Turbopack)                         |
+| `npm run worker:dev`       | BullMQ worker with watch mode                          |
+| `npm run check`            | Lint + typecheck + unit tests                          |
+| `npm test`                 | Unit tests (Vitest)                                    |
+| `npm run test:integration` | Integration + tenancy isolation suite (local Supabase) |
+| `npm run db:reset`         | Re-apply migrations locally                            |
+| `npm run db:types`         | Regenerate DB types                                    |
+| `npm run e2e`              | Playwright end-to-end tests                            |
+| `npm run format`           | Prettier                                               |
+| `npm run build`            | Production build                                       |
 
 ## Documentation
 

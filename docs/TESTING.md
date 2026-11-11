@@ -1,11 +1,11 @@
 # Testing
 
-| Layer       | Tool                     | Location                                  | Command                              |
-| ----------- | ------------------------ | ----------------------------------------- | ------------------------------------ |
-| Unit        | Vitest (+ jsdom, RTL)    | next to source: `*.test.ts(x)`            | `npm test`                           |
-| Integration | Vitest (node env)        | `tests/integration/**`                    | `npm run test:integration` (Phase 2) |
-| E2E         | Playwright               | `tests/e2e/**`                            | `npm run e2e`                        |
-| Fixtures    | Sample invoices/receipts | `tests/fixtures/{pdf,scanned,images,csv}` | —                                    |
+| Layer       | Tool                     | Location                                  | Command                    |
+| ----------- | ------------------------ | ----------------------------------------- | -------------------------- |
+| Unit        | Vitest (+ jsdom, RTL)    | next to source: `*.test.ts(x)`            | `npm test`                 |
+| Integration | Vitest (node env)        | `tests/integration/**`                    | `npm run test:integration` |
+| E2E         | Playwright               | `tests/e2e/**`                            | `npm run e2e`              |
+| Fixtures    | Sample invoices/receipts | `tests/fixtures/{pdf,scanned,images,csv}` | —                          |
 
 ## What must be tested
 
@@ -29,3 +29,17 @@
 - Integration tests use local Supabase and create isolated orgs per test file; clean up after.
 - Tests describe behavior, not implementation. Prefer `getByRole` queries.
 - jsdom polyfills (e.g. `IntersectionObserver`) live in `tests/setup/vitest.setup.ts`.
+
+## Running integration and E2E tests locally
+
+Both need local Supabase: `npx supabase start`, then put the URL, anon key and service-role key from
+`npx supabase status` into `.env.local` (plus `SUPABASE_DB_URL`, default
+`postgresql://postgres:postgres@127.0.0.1:54322/postgres`). After changing migrations: `npm run db:reset` and
+`npm run db:types`.
+
+- Integration tests create their own users/orgs with random emails and delete them afterwards; files run one at a
+  time (`fileParallelism: false`).
+- The isolation suite was verified to fail when a permissive policy or un-forced RLS is planted — keep it that way
+  when changing it (plant a leak, see red, remove it).
+- If `supabase start` cannot pull from `public.ecr.aws` (restricted networks), set
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io` to pull the same images from Docker Hub.

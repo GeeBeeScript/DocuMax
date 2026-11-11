@@ -81,3 +81,22 @@ subscriptions by user A receive no Org B events, and the worker's `forOrg()` hel
 
 A table may be exempted only via an explicit allowlist in the test with a comment explaining why (e.g.
 `report_templates` system rows with `org_id is null` are readable by all).
+
+### Adding a tenant table (checklist)
+
+1. Migration: `org_id … references organizations on delete cascade`, index, `enable` + `force row level security`,
+   policies, `prevent_org_change` trigger, `audit` trigger if marked ✎ in DATA_MODEL.
+2. Register a **seeder** in `tests/integration/tenancy/isolation.test.ts` (`SEEDERS`): how to create a row for an
+   org, an insert payload an attacker would try, and a harmless update. The suite fails until you do.
+3. If the UI subscribes to it, add it to the `supabase_realtime` publication.
+
+### Implemented (Phase 2)
+
+- Suite: `tests/integration/tenancy/` — `isolation` (discovery, forced-RLS catalog check, checks 1–6, anonymous,
+  viewer, `organizations` by id, `profiles`), `storage`, `realtime`, `org-scope`, `roles` (role matrix),
+  `audit`, `onboarding` (RPCs). Server Actions are covered in `tests/integration/actions/` running as real users.
+- Organizations and memberships are never inserted directly by end users: `create_organization()` and
+  `accept_invite()` (security definer) are the only paths. Ownership rules (only owners grant/revoke owner,
+  at least one owner) live in the `guard_membership_change` trigger, so they hold for every client.
+- Profiles are visible to self and to users who share an org (`shares_org_with`). `last_org_id` may only point
+  at an org the user belongs to (RLS `with check`), and is never used for authorization.
