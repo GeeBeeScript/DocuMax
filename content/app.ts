@@ -168,3 +168,60 @@ export const entitiesCopy = {
   },
   readOnly: "Only owners and admins can add or edit these.",
 };
+
+export const documentsCopy = {
+  title: "Documents",
+  description: "Supplier invoices and receipts, from upload to checked data.",
+  dropzone: {
+    title: "Drop invoices and receipts here",
+    hint: (types: string) => `${types} · up to 25 MB each · many at once`,
+    choose: "Choose files",
+    active: "Release to upload",
+  },
+  assignLabel: (singular: string) => `Assign to ${singular.toLowerCase()} (optional)`,
+  unassigned: "Not assigned",
+  tray: {
+    heading: "Uploads",
+    clear: "Clear finished",
+    statuses: {
+      rejected: "Not uploaded",
+      waiting: "Waiting",
+      hashing: "Preparing",
+      uploading: "Uploading",
+      confirming: "Finishing",
+      done: "Uploaded",
+      error: "Failed",
+    },
+    duplicate: (name: string) => `Looks identical to “${name}”, uploaded earlier.`,
+    view: "View",
+    progress: (name: string) => `Upload progress for ${name}`,
+  },
+  list: {
+    caption: "Documents",
+    columns: { name: "File", entity: "Assigned to", uploaded: "Uploaded", size: "Size", status: "Status" },
+    empty: {
+      title: "No documents yet",
+      description: "Upload your first invoice or receipt to see it processed here.",
+    },
+    readOnly: "You have read-only access, so uploading is turned off.",
+  },
+  detail: {
+    back: "All documents",
+    retry: "Retry processing",
+    retried: "Processing restarted",
+    download: "Download original",
+    facts: { status: "Status", entity: "Assigned to", uploaded: "Uploaded", size: "Size", pages: "Pages" },
+    failed: "Processing failed",
+  },
+  preview: {
+    loading: "Loading preview…",
+    unavailable: "Preview isn't available for this file type. Download the original to view it.",
+    error: "The preview couldn't be loaded.",
+    page: (n: number, total: number) => `Page ${n} of ${total}`,
+    thumbnails: "Pages",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    resetZoom: "Reset zoom",
+  },
+  live: (name: string, status: string) => `${name}: ${status}`,
+};
