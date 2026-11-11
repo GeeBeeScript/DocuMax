@@ -1,31 +1,13 @@
 /**
- * Org Server Actions against local Supabase, running as real users. Only Next's request plumbing is mocked:
- * the server client returns the current test user's client, redirect() throws, revalidate is a no-op.
+ * Org Server Actions against local Supabase, running as real users (Next plumbing mocked in ../next-mocks.ts).
  */
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { addMember, adminClient, cleanup, createOrg, createUser, type TestUser } from "../helpers";
-
-class Redirect extends Error {
-  constructor(public url: string) {
-    super(`redirect ${url}`);
-  }
-}
-
-const state = vi.hoisted(() => ({ current: null as unknown }));
-vi.mock("server-only", () => ({}));
-vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("next/navigation", () => ({
-  redirect: (url: string) => {
-    throw new Redirect(url);
-  },
-}));
-vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: async () => (state.current as TestUser).client,
-}));
+import { actAs } from "../next-mocks";
 
 const actions = await import("@/features/org/actions");
 const admin = adminClient();
-const as = (u: TestUser) => (state.current = u);
+const as = (u: TestUser) => actAs(u);
 
 let owner: TestUser,
   adminUser: TestUser,

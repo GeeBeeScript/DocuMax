@@ -33,7 +33,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       switcher={
         <OrgSwitcher orgs={orgs} activeId={ctx.org.id} onSwitch={switchOrg} labels={shellCopy.orgSwitcher} />
       }
-      nav={<AppNav />}
+      nav={<AppNav entityKind={ctx.org.entity_kind} />}
     />
   );
 

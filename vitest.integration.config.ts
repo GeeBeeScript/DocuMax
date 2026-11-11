@@ -13,7 +13,7 @@ export default defineConfig({
     environment: "node",
     globals: false,
     include: ["tests/integration/**/*.test.ts"],
-    setupFiles: ["./tests/integration/setup.ts"],
+    setupFiles: ["./tests/integration/setup.ts", "./tests/integration/next-mocks.ts"],
     fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 60_000,

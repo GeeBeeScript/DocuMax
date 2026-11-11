@@ -102,7 +102,7 @@ describe("form fields", () => {
 describe("AppNav", () => {
   it("marks only the current page", () => {
     pathname.value = "/app/settings/members";
-    render(<AppNav />);
+    render(<AppNav entityKind="job" />);
     expect(screen.getByRole("link", { name: "Team" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
   });
