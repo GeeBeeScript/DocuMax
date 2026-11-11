@@ -7,14 +7,33 @@ import { DOCUMENT_STATUSES, type DocumentStatus } from "@/lib/documents/status";
 export interface LiveStatus {
   status: DocumentStatus;
   error: string | null;
+  /** Row `updated_at` — decides which of two snapshots is newer. */
+  updatedAt: string;
 }
 
 const isStatus = (v: unknown): v is DocumentStatus => (DOCUMENT_STATUSES as readonly unknown[]).includes(v);
 
+/** The newer of two snapshots of the same document (ties keep `a`). */
+export function newer(a: LiveStatus | undefined, b: LiveStatus | undefined): LiveStatus | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  return Date.parse(b.updatedAt) > Date.parse(a.updatedAt) ? b : a;
+}
+
+/** Merge per-document snapshots, keeping the newest for each id. */
+export function mergeStatuses(...sources: Record<string, LiveStatus>[]): Record<string, LiveStatus> {
+  const merged: Record<string, LiveStatus> = {};
+  for (const source of sources) {
+    for (const [id, snapshot] of Object.entries(source)) merged[id] = newer(merged[id], snapshot)!;
+  }
+  return merged;
+}
+
 /**
  * Live document statuses for an org via Supabase Realtime (RLS applies to postgres_changes, so only this
- * org's rows arrive). `initial` comes from the server render; updates override it. `onChange` fires per update
- * (used for aria-live announcements and refreshing the page when a new row appears).
+ * org's rows arrive). Sources — the server render (`initial`), realtime events, and a re-fetch once the
+ * subscription is live (covering changes made while it was connecting) — are merged by `updated_at`, so an
+ * older snapshot can never overwrite a newer one. `onChange` fires per realtime update.
  */
 export function useDocumentStatuses(
   orgId: string,
@@ -26,11 +45,26 @@ export function useDocumentStatuses(
   useEffect(() => {
     onChangeRef.current = onChange;
   });
+  const idsRef = useRef<string[]>([]);
+  idsRef.current = Object.keys(initial);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     let channel: ReturnType<typeof supabase.channel> | undefined;
     let cancelled = false;
+    const apply = (updates: Record<string, LiveStatus>) => setLive((prev) => mergeStatuses(prev, updates));
+
+    const resync = async () => {
+      const ids = idsRef.current;
+      if (ids.length === 0) return;
+      const { data } = await supabase.from("documents").select("id, status, error, updated_at").in("id", ids);
+      if (cancelled || !data) return;
+      apply(
+        Object.fromEntries(
+          data.map((d) => [d.id, { status: d.status, error: d.error, updatedAt: d.updated_at }]),
+        ),
+      );
+    };
 
     (async () => {
       // Authenticate the realtime socket with the user's session BEFORE joining: otherwise the channel joins
@@ -44,14 +78,21 @@ export function useDocumentStatuses(
           "postgres_changes",
           { event: "UPDATE", schema: "public", table: "documents", filter: `org_id=eq.${orgId}` },
           (payload) => {
-            const row = payload.new as { id?: string; status?: unknown; error?: string | null };
-            if (!row.id || !isStatus(row.status)) return;
-            const next = { status: row.status, error: row.error ?? null };
-            setLive((prev) => ({ ...prev, [row.id!]: next }));
+            const row = payload.new as {
+              id?: string;
+              status?: unknown;
+              error?: string | null;
+              updated_at?: string;
+            };
+            if (!row.id || !isStatus(row.status) || !row.updated_at) return;
+            const next = { status: row.status, error: row.error ?? null, updatedAt: row.updated_at };
+            apply({ [row.id]: next });
             onChangeRef.current?.(row.id, next);
           },
         )
-        .subscribe();
+        .subscribe((state) => {
+          if (state === "SUBSCRIBED") void resync();
+        });
     })();
 
     return () => {
@@ -60,7 +101,7 @@ export function useDocumentStatuses(
     };
   }, [orgId]);
 
-  return { ...initial, ...live };
+  return mergeStatuses(initial, live);
 }
 
 /** Single-document convenience wrapper. */

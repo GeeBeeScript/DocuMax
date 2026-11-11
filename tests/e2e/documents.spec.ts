@@ -49,3 +49,29 @@ test("documents are gated behind login", async ({ page }) => {
   await page.goto("/app/documents");
   await expect(page).toHaveURL(/\/login\?next=%2Fapp%2Fdocuments$/);
 });
+
+test("a scanned PDF is OCR'd and its text shown per page", async ({ page }) => {
+  await page.goto("/signup");
+  await page.getByLabel("Full name").fill("Olga OCR");
+  await page.getByLabel("Work email").fill(`ocr-${Date.now()}@example.test`);
+  await page.getByLabel("Password").fill("correct-horse-9");
+  await page.getByRole("button", { name: "Sign up free" }).click();
+  await page.getByLabel("Organization name").fill("Scan Co");
+  await page.getByText("Properties", { exact: true }).click();
+  await page.getByRole("button", { name: "Create organization" }).click();
+  await expect(page).toHaveURL(/\/onboarding\/invite$/);
+  await page.goto("/app/documents");
+
+  const scanned = path.join(__dirname, "../fixtures/pdf/scanned-invoice-3-pages.pdf");
+  await page.locator("input[type=file]").setInputFiles(scanned);
+  const row = page.getByRole("row", { name: /scanned-invoice-3-pages\.pdf/ });
+  await expect(row).toContainText("Ready", { timeout: 60_000 });
+
+  await row.getByRole("link", { name: "scanned-invoice-3-pages.pdf" }).click();
+  await page.getByRole("tab", { name: "Extracted text" }).click();
+  const pages = page.getByRole("tabpanel").getByRole("listitem");
+  await expect(pages).toHaveCount(3);
+  await expect(pages.first().getByText(/^OCR · \d+%$/)).toBeVisible();
+  await expect(pages.first()).toContainText("Brightline Plumbing");
+  await expect(pages.nth(2)).toContainText("Page 3 of 3");
+});

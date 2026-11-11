@@ -232,4 +232,15 @@ export const documentsCopy = {
     resetZoom: "Reset zoom",
   },
   live: (name: string, status: string) => `${name}: ${status}`,
+  tabs: { preview: "Preview", text: "Extracted text" },
+  text: {
+    page: (n: number) => `Page ${n}`,
+    sources: { textLayer: "Text layer", ocr: "OCR" },
+    emptyPage: "No text found on this page.",
+    pending: {
+      title: "Text not extracted yet",
+      description: "It appears here as soon as the document has been read — usually within seconds.",
+    },
+    lowConfidence: "Low OCR confidence — check this page against the preview.",
+  },
 };

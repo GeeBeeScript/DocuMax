@@ -32,7 +32,9 @@ export function DocumentList({
   const names = Object.fromEntries(documents.map((d) => [d.id, d.fileName]));
   const statuses = useDocumentStatuses(
     orgId,
-    Object.fromEntries(documents.map((d) => [d.id, { status: d.status, error: null }])),
+    Object.fromEntries(
+      documents.map((d) => [d.id, { status: d.status, error: null, updatedAt: d.updatedAt }]),
+    ),
     (id, next) => {
       if (names[id]) setAnnouncement(documentsCopy.live(names[id], DOCUMENT_STATUS_META[next.status].label));
     },

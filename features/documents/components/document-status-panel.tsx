@@ -20,6 +20,7 @@ export function DocumentStatusPanel({
   fileName,
   initialStatus,
   initialError,
+  initialUpdatedAt,
   canRetry,
 }: {
   orgId: string;
@@ -27,6 +28,7 @@ export function DocumentStatusPanel({
   fileName: string;
   initialStatus: DocumentStatus;
   initialError: string | null;
+  initialUpdatedAt: string;
   canRetry: boolean;
 }) {
   const router = useRouter();
@@ -35,11 +37,12 @@ export function DocumentStatusPanel({
   const { status, error } = useDocumentStatus(
     orgId,
     documentId,
-    { status: initialStatus, error: initialError },
+    { status: initialStatus, error: initialError, updatedAt: initialUpdatedAt },
     (next) => {
       setAnnouncement(documentsCopy.live(fileName, DOCUMENT_STATUS_META[next.status].label));
-      if (next.status === "ready" || next.status === "needs_review" || next.status === "failed")
-        router.refresh();
+      // Re-fetch server-rendered parts when there's something new to show: extracted pages land with
+      // `analyzing`; final statuses bring page count / errors.
+      if (["analyzing", "ready", "needs_review", "failed"].includes(next.status)) router.refresh();
     },
   );
 
