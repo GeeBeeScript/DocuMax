@@ -1,17 +1,28 @@
-import { LayoutGrid, Users } from "lucide-react";
+import { Building2, FileText, HardHat, LayoutGrid, Users } from "lucide-react";
+import type { EntityKind, EntityLabels } from "@/lib/entities/labels";
 import type { OrgRole } from "@/lib/auth/roles";
 import type { LucideIcon } from "lucide-react";
 
 /** In-app copy (Phase 2: shell, onboarding, members, invites). Entity wording comes from entityLabels(). */
 
 export interface AppNavItem {
-  label: string;
+  /** Plain label, or derived from the org's entity wording (properties vs jobs). */
+  label: string | ((labels: EntityLabels) => string);
   href: string;
   icon: LucideIcon;
+  /** Overrides `icon` per entity kind. */
+  iconByKind?: Record<EntityKind, LucideIcon>;
 }
 
 export const appNav: AppNavItem[] = [
   { label: "Dashboard", href: "/app", icon: LayoutGrid },
+  {
+    label: (l) => l.plural,
+    href: "/app/entities",
+    icon: Building2,
+    iconByKind: { property: Building2, job: HardHat },
+  },
+  { label: "Documents", href: "/app/documents", icon: FileText },
   { label: "Team", href: "/app/settings/members", icon: Users },
 ];
 
@@ -122,4 +133,38 @@ export const inviteCopy = {
     description:
       "It may have expired, been revoked or already been accepted. Ask your teammate for a new link.",
   },
+};
+
+export const entitiesCopy = {
+  description: (plural: string) => `Every cost lands on one of your ${plural.toLowerCase()}.`,
+  views: { label: "View", grid: "Cards", table: "Table" },
+  filters: { label: "Show", active: "Active", archived: "Archived" },
+  columns: { status: "Status", documents: "Documents" },
+  status: { active: "Active", archived: "Archived" },
+  dialog: {
+    createTitle: (singular: string) => `Add ${singular.toLowerCase()}`,
+    editTitle: (singular: string) => `Edit ${singular.toLowerCase()}`,
+    save: "Save",
+    cancel: "Cancel",
+    optional: "Optional",
+  },
+  actions: {
+    edit: "Edit",
+    archive: "Archive",
+    restore: "Restore",
+    menu: (name: string) => `Actions for ${name}`,
+    created: (singular: string) => `${singular} added`,
+    saved: "Changes saved",
+    archived: (singular: string) => `${singular} archived`,
+    restored: (singular: string) => `${singular} restored`,
+  },
+  empty: {
+    active: {
+      title: (plural: string) => `No ${plural.toLowerCase()} yet`,
+      description: (singular: string) =>
+        `Add your first ${singular.toLowerCase()} so uploaded costs have somewhere to go.`,
+    },
+    archived: { title: "Nothing archived", description: "Archived items will appear here." },
+  },
+  readOnly: "Only owners and admins can add or edit these.",
 };

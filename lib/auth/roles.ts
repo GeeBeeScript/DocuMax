@@ -14,6 +14,8 @@ export const INVITABLE_ROLES = [
 ] as const satisfies readonly OrgRole[];
 
 export const MEMBER_MANAGERS = ["owner", "admin"] as const satisfies readonly OrgRole[];
+/** Manage properties/jobs (PRD: admins manage entities). */
+export const ENTITY_MANAGERS = MEMBER_MANAGERS;
 export const WRITERS = ["owner", "admin", "reviewer", "member"] as const satisfies readonly OrgRole[];
 
 export function hasRole(role: OrgRole | null | undefined, allowed: readonly OrgRole[]): boolean {
@@ -22,6 +24,7 @@ export function hasRole(role: OrgRole | null | undefined, allowed: readonly OrgR
 
 export const canManageMembers = (role: OrgRole | null | undefined) => hasRole(role, MEMBER_MANAGERS);
 export const canWrite = (role: OrgRole | null | undefined) => hasRole(role, WRITERS);
+export const canManageEntities = (role: OrgRole | null | undefined) => hasRole(role, ENTITY_MANAGERS);
 
 /** Roles `actor` may assign to someone else. Only owners hand out (or take away) ownership. */
 export function assignableRoles(actor: OrgRole): readonly OrgRole[] {
