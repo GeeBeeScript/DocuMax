@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DocuMax
 
-## Getting Started
+AI document processing for property managers and home-service contractors: upload supplier invoices and receipts,
+get checked structured data, review it, and produce polished monthly cost statements per property or job.
 
-First, run the development server:
+> Contributors and AI agents: start with [CLAUDE.md](CLAUDE.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## Prerequisites
+
+- Node.js ≥ 22
+- Docker Desktop (for Redis and local Supabase)
+- Supabase CLI (`npx supabase`)
+
+## Local setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local          # fill in values (see below)
+docker compose up -d redis          # Redis for the job queue
+npx supabase start                  # local Postgres/Auth/Storage; copy keys from `npx supabase status`
+npm run dev                         # web app on http://localhost:3000
+npm run worker:dev                  # background worker (separate terminal)
+npm run queue:ping                  # verify web → Redis → worker round-trip
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Script               | What it does                   |
+| -------------------- | ------------------------------ |
+| `npm run dev`        | Next.js dev server (Turbopack) |
+| `npm run worker:dev` | BullMQ worker with watch mode  |
+| `npm run check`      | Lint + typecheck + unit tests  |
+| `npm test`           | Unit tests (Vitest)            |
+| `npm run e2e`        | Playwright end-to-end tests    |
+| `npm run format`     | Prettier                       |
+| `npm run build`      | Production build               |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Documentation
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Doc                                                         | Contents                               |
+| ----------------------------------------------------------- | -------------------------------------- |
+| [PRD](docs/PRD.md)                                          | Product requirements and personas      |
+| [Architecture](docs/ARCHITECTURE.md)                        | System design, pipeline, deployment    |
+| [Data model](docs/DATA_MODEL.md)                            | Tables and status machines             |
+| [Multi-tenancy](docs/MULTI_TENANCY.md)                      | RLS, roles, isolation tests            |
+| [Document pipeline](docs/DOCUMENT_PIPELINE.md)              | OCR, AI schema, validation, review     |
+| [Design system](docs/DESIGN_SYSTEM.md)                      | Tokens, type, components, page mapping |
+| [Conventions](docs/CONVENTIONS.md)                          | Code structure and componentization    |
+| [Testing](docs/TESTING.md)                                  | Test strategy                          |
+| [Roadmap](docs/ROADMAP.md) · [Decisions](docs/DECISIONS.md) | Phases and ADRs                        |

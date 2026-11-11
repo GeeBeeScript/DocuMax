@@ -1,0 +1,23 @@
+# Local development services. Supabase runs separately via `npx supabase start`.
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    profiles: ["worker"] # opt-in: `docker compose --profile worker up`
+    env_file: .env.local
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+
+volumes:
+  redis-data:
