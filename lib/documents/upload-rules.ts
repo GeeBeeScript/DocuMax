@@ -26,7 +26,9 @@ const EXTENSION_TYPES: Record<string, UploadMimeType> = {
 };
 
 /** `accept` attribute for file inputs. */
-export const UPLOAD_ACCEPT = [...UPLOAD_MIME_TYPES, ...Object.keys(EXTENSION_TYPES).map((e) => `.${e}`)].join(",");
+export const UPLOAD_ACCEPT = [...UPLOAD_MIME_TYPES, ...Object.keys(EXTENSION_TYPES).map((e) => `.${e}`)].join(
+  ",",
+);
 
 export const UPLOAD_TYPES_LABEL = "PDF, JPG, PNG, WEBP or HEIC";
 

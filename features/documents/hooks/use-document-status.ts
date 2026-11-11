@@ -29,22 +29,34 @@ export function useDocumentStatuses(
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    const channel = supabase
-      .channel(`documents:${orgId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "documents", filter: `org_id=eq.${orgId}` },
-        (payload) => {
-          const row = payload.new as { id?: string; status?: unknown; error?: string | null };
-          if (!row.id || !isStatus(row.status)) return;
-          const next = { status: row.status, error: row.error ?? null };
-          setLive((prev) => ({ ...prev, [row.id!]: next }));
-          onChangeRef.current?.(row.id, next);
-        },
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+    let cancelled = false;
+
+    (async () => {
+      // Authenticate the realtime socket with the user's session BEFORE joining: otherwise the channel joins
+      // as anon and RLS filters out every row.
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      await supabase.realtime.setAuth(data.session?.access_token ?? null);
+      channel = supabase
+        .channel(`documents:${orgId}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "documents", filter: `org_id=eq.${orgId}` },
+          (payload) => {
+            const row = payload.new as { id?: string; status?: unknown; error?: string | null };
+            if (!row.id || !isStatus(row.status)) return;
+            const next = { status: row.status, error: row.error ?? null };
+            setLive((prev) => ({ ...prev, [row.id!]: next }));
+            onChangeRef.current?.(row.id, next);
+          },
+        )
+        .subscribe();
+    })();
+
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [orgId]);
 
