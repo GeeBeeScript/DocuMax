@@ -92,3 +92,22 @@ Users can UPDATE only `documents.entity_id` and `file_name` (column grants). `up
 `from` and sets `app.actor_id` so the audit log names the worker. **Why:** the status machine and attempt counter
 stay consistent whatever the client does, and duplicate or late jobs can't move a document backwards — the
 idempotency the queue design requires is enforced in one place.
+
+## ADR-013 — OCR every sparse page; binarize with Otsu, no normalize/deskew
+
+**Status:** Accepted (2026-11-13)
+DOCUMENT_PIPELINE.md first said "OCR sparse pages only if > 50% of pages are sparse", which contradicts the Phase 4
+acceptance criterion "mixed PDFs OCR only sparse pages" (a 1-in-4 scanned page would be skipped). Now every sparse
+page is OCR'd and text-layer pages never are. Preprocessing was chosen by measurement on the fixtures: `normalize()`
+stretched JPEG noise on mostly-white scans into stripes (0/7 key strings); Otsu binarization of plain grayscale
+found 7/7 on every scanned page and 8/8 on the phone photo. Deskew is not applied: the fixtures are tilted ~1° and
+Tesseract handles that; revisit with real customer scans. Note Tesseract's own confidence can be high on garbage
+(95 with 0/7 key strings), so OCR quality is tested on content, not confidence.
+
+## ADR-014 — HEIC/HEIF decoded with libheif-in-WASM (`heic-decode`)
+
+**Status:** Accepted (2026-11-13)
+Prebuilt sharp/libvips ships without the HEVC decoder (patent licensing), so it reads AVIF but not iPhone HEIC.
+`heic-decode` (libheif compiled to WASM) decodes to RGBA, which sharp then handles. No native build step or system
+libheif needed in the worker image. No HEIC fixture yet (none can be produced here without an HEVC encoder): the
+path is unit-tested with a mocked decoder — add a real iPhone photo fixture when one is available.

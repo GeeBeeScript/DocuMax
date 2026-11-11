@@ -9,14 +9,29 @@ in `lib/pipeline/*` so each stage is unit-testable with fixtures.
 2. Compute `sha256` (if not already) → duplicate-file check happens in validation.
 3. **PDF:** extract the text layer per page with `unpdf`.
    - A page is **sparse** when it has < 40 non-whitespace characters (`OCR_MIN_CHARS_PER_PAGE`).
-   - If > 50% of pages are sparse → OCR those pages.
-4. **OCR:** render the page to PNG at 300 DPI (pdfjs + `@napi-rs/canvas`), preprocess with `sharp` (grayscale,
-   normalize, deskew-light), run `tesseract.js` (`eng` by default; org language setting later). Store per-page OCR
-   confidence.
-5. **Images:** `sharp` preprocessing (rotate by EXIF, convert HEIC/WEBP → PNG) → OCR.
-6. Persist `document_pages` (`text`, `source`, `ocr_confidence`). Status → `analyzing`.
+   - **Every sparse page is OCR'd**; pages with a real text layer never are (ADR-013). Digital PDFs skip OCR, scans
+     are fully OCR'd, mixed PDFs OCR only their scanned pages.
+4. **OCR:** render the page to PNG at 300 DPI (pdfjs via `unpdf` + `@napi-rs/canvas`), preprocess with `sharp`, run
+   `tesseract.js` (`eng`; org language setting later). Store per-page OCR confidence (0–1).
+   - Preprocessing (`lib/pipeline/preprocess.ts`): EXIF rotate → flatten transparency onto white → grayscale →
+     bounded upscale of narrow images (to 1600 px, ≤ 2.5×) → **Otsu binarization**. No `normalize()` and no deskew
+     (ADR-013).
+   - Tesseract: one pool per worker process (`OCR_WORKERS`, default 2), reused across jobs; job concurrency matches
+     the pool. Language data comes from the `@tesseract.js-data/eng` npm package (in `node_modules`, so baked into
+     the worker image) — never downloaded at runtime.
+5. **Images:** EXIF rotation and preprocessing as above → OCR. HEIC/HEIF is decoded with `heic-decode` (libheif in
+   WASM) because prebuilt sharp lacks the HEVC decoder (ADR-014).
+6. Persist pages with `save_document_pages()` (replaces the document's pages and moves `extracting → analyzing` in
+   one transaction; also records `page_count` and `sha256`).
 
-Limits: 30 pages max per document in v1 (configurable); larger files fail with a clear message.
+Limits: 30 pages max per document in v1 (`lib/pipeline/config.ts`); larger files fail with a clear message.
+
+**Failures.** Permanent problems throw `PipelineError` and fail the document at once with a user-facing message
+(no retries): corrupt/truncated PDF, password-protected PDF, too many pages, unreadable image, unsupported type.
+Anything else is transient: the job throws, BullMQ retries (3 attempts), and a retry resumes from `extracting`.
+
+**Measured** (4 vCPU sandbox, 2 OCR workers): scanned 3-page invoice ≈ 5 s end to end; digital page ≈ 0.1 s; phone
+photo ≈ 0.9 s. All key strings (supplier, invoice no., dates, tax id, totals) found on every fixture.
 
 ## Stage 2 — AI extraction (Phase 5)
 
@@ -103,11 +118,10 @@ All arithmetic uses `lib/calc`. Normalization (supplier names, invoice numbers) 
 - Corrections re-run validation instantly (same `lib/validation` code client- and server-side).
 - Every approve/reject/correct writes `review_actions` (with optional reason) and is captured by the audit trigger.
 
-## Phase 3 stub and guard rails
+## Stub stages and guard rails
 
-Until Phases 4–6 land, `worker/processors/process-document.ts` walks `queued → extracting → analyzing →
-validating → ready` with `STUB_STEP_MS` pauses (default 800 ms) so the UI runs against real, live status changes.
-The parts that stay when real stages replace the pauses:
+Stage 1 is real since Phase 4. Until Phases 5–6 land, `worker/processors/process-document.ts` walks
+`analyzing → validating → ready` with `STUB_STEP_MS` pauses (default 800 ms). Guard rails that stay:
 
 - `forOrg(db, orgId).requireRow("documents", id)` — the payload's org must own the document.
 - The file must exist in Storage, else the document fails with a clear message.
