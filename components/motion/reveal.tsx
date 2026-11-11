@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { m, useReducedMotion } from "motion/react";
+import { m } from "motion/react";
 
 export type RevealProps = {
   children: ReactNode;
@@ -14,16 +14,17 @@ export type RevealProps = {
 
 /**
  * Fade + rise into view once, when scrolled into the viewport.
- * Reduced-motion users get the content immediately with no transform.
  * All scroll-reveal in the app goes through this component.
+ *
+ * Reduced motion: the server can't know the user's preference, so server and client always render
+ * the same motion element (switching element on the client leaves the server's inline
+ * `opacity: 0` in place after hydration). `data-reveal` lets a `prefers-reduced-motion` rule in
+ * globals.css force the content visible and static — before JS even loads.
  */
 export function Reveal({ children, className, delay = 0, y = 24 }: RevealProps) {
-  const reduce = useReducedMotion();
-
-  if (reduce) return <div className={className}>{children}</div>;
-
   return (
     <m.div
+      data-reveal=""
       className={className}
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}

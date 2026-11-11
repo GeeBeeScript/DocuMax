@@ -225,3 +225,12 @@
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
+
+/* Reduced motion: scroll-reveal wrappers (Reveal, Stagger) server-render hidden; show them as-is.
+   Done in CSS so it works before hydration and can't be undone by Motion's inline styles. */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

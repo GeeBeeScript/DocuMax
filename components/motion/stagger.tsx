@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { m, useReducedMotion, type Variants } from "motion/react";
+import { m, type Variants } from "motion/react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -18,12 +18,11 @@ export type StaggerProps = {
   as?: "div" | "ul" | "ol";
 };
 
-/** Reveals its <StaggerItem> children one after another when scrolled into view. */
+/**
+ * Reveals its <StaggerItem> children one after another when scrolled into view.
+ * Reduced motion is handled in CSS via `data-reveal` — see Reveal for why not useReducedMotion.
+ */
 export function Stagger({ children, className, step = 0.08, as = "div" }: StaggerProps) {
-  const reduce = useReducedMotion();
-  const Tag = as;
-  if (reduce) return <Tag className={className}>{children}</Tag>;
-
   const MotionTag = m[as];
   return (
     <MotionTag
@@ -47,13 +46,9 @@ export function StaggerItem({
   className?: string;
   as?: "div" | "li";
 }) {
-  const reduce = useReducedMotion();
-  const Tag = as;
-  if (reduce) return <Tag className={className}>{children}</Tag>;
-
   const MotionTag = m[as];
   return (
-    <MotionTag className={className} variants={item}>
+    <MotionTag data-reveal="" className={className} variants={item}>
       {children}
     </MotionTag>
   );

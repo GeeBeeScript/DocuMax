@@ -53,3 +53,14 @@ licensing or trademark issues.
 **Status:** Accepted (2026-11-10)
 The shadcn CLI initialized with Base UI primitives and the `cn` package (instead of clsx + tailwind-merge). Kept as
 generated; our code imports `cn` from `@/lib/utils` so it can be swapped in one place.
+
+## ADR-009 — Reduced motion for scroll reveals is enforced in CSS, not by swapping elements
+
+**Status:** Accepted (2026-11-11)
+`Reveal` and `Stagger`/`StaggerItem` always render the same Motion element on server and client and carry a
+`data-reveal` attribute; a `prefers-reduced-motion: reduce` rule in `app/globals.css` forces those elements to
+`opacity: 1; transform: none`. Other wrappers (FadeSwap, HoverLift, Float) rely on `MotionConfig
+reducedMotion="user"` since they never server-render hidden. **Why:** the server cannot know the user's preference.
+The previous approach (`useReducedMotion()` → render a plain `div`) hydrated over the server's inline
+`opacity: 0`, which React does not patch, so reduced-motion users saw blank sections. The CSS rule also works
+before JS loads. Corollary: above-the-fold LCP content (hero/pricing headlines) is never wrapped in `Reveal`.

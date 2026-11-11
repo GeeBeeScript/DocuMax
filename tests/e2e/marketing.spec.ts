@@ -36,6 +36,22 @@ test.describe("marketing site", () => {
     await expect(page).toHaveURL(/\/contractors$/);
   });
 
+  test("reduced-motion users see scroll-revealed content", async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto("/");
+    const heading = page.locator("#why-documax h3").first();
+    await heading.scrollIntoViewIfNeeded();
+    // Opacity of the heading and every ancestor (a Reveal wrapper sits above it).
+    const opacity = await heading.evaluate((el) => {
+      let o = 1;
+      for (let n: Element | null = el; n; n = n.parentElement) o *= Number(getComputedStyle(n).opacity);
+      return o;
+    });
+    expect(opacity).toBe(1);
+    await context.close();
+  });
+
   test("SEO routes respond", async ({ request }) => {
     for (const path of ["/sitemap.xml", "/robots.txt", "/opengraph-image"]) {
       const res = await request.get(path);
