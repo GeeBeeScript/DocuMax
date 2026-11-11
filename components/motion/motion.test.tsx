@@ -17,6 +17,15 @@ describe("motion wrappers", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });
 
+  it("Stagger items carry the reduced-motion marker", () => {
+    const { container } = render(
+      <Stagger>
+        <StaggerItem>a</StaggerItem>
+      </Stagger>,
+    );
+    expect(container.querySelector("[data-reveal]")).toHaveTextContent("a");
+  });
+
   it("HoverLift, Float and FadeSwap render children", () => {
     render(
       <>

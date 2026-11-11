@@ -6,7 +6,6 @@ import { MarketingSection } from "@/components/marketing/marketing-section";
 import { PricingCards } from "@/components/marketing/pricing-cards";
 import { PricingTable } from "@/components/marketing/pricing-table";
 import { TrustGrid } from "@/components/marketing/trust-grid";
-import { Reveal } from "@/components/motion/reveal";
 import { comparison, planCards, pricingCta, pricingFaq, pricingHero, security } from "@/content/pricing";
 
 export const metadata: Metadata = {
@@ -18,14 +17,14 @@ export default function PricingPage() {
   return (
     <>
       <MarketingSection spacing="md" size="wide" className="pt-12 md:pt-20">
-        <Reveal className="mb-10">
-          <SectionHeading
-            as="h1"
-            align="center"
-            title={pricingHero.title}
-            description={pricingHero.description}
-          />
-        </Reveal>
+        {/* No Reveal here: the headline is the LCP element and must paint without JS. */}
+        <SectionHeading
+          as="h1"
+          align="center"
+          className="mb-10"
+          title={pricingHero.title}
+          description={pricingHero.description}
+        />
         <PricingCards cards={planCards} />
       </MarketingSection>
       <MarketingSection spacing="sm" size="wide">

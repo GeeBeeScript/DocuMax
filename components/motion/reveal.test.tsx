@@ -11,4 +11,11 @@ describe("Reveal", () => {
     );
     expect(screen.getByText("Visible content")).toBeInTheDocument();
   });
+
+  it("marks itself for the reduced-motion CSS override", () => {
+    const { container } = render(<Reveal>Hidden until revealed</Reveal>);
+    // globals.css forces [data-reveal] visible under prefers-reduced-motion; the server can't know
+    // the preference, so this marker (not a JS branch) is what keeps the content visible.
+    expect(container.firstElementChild).toHaveAttribute("data-reveal");
+  });
 });
