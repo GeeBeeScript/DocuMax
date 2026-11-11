@@ -3,6 +3,7 @@
  * `public` base table with an `org_id` column is tested automatically. A new table must register a seeder
  * below (the suite fails otherwise) — or be added to EXEMPT with a reason.
  */
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   addMember,
@@ -72,6 +73,52 @@ const SEEDERS: Record<string, Seeder> = {
       token_hash: newInviteToken().hash,
     }),
     update: { role: "admin" },
+  },
+  entities: {
+    async seed(_ctx, orgId) {
+      const { data, error } = await admin
+        .from("entities")
+        .insert({ org_id: orgId, kind: "property", name: `Seed ${orgId.slice(0, 4)}` })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({ org_id: orgId, kind: "property", name: "Intruder entity" }),
+    update: { name: "Renamed by intruder" },
+  },
+  documents: {
+    async seed(ctx, orgId) {
+      const id = randomUUID();
+      const { data, error } = await admin
+        .from("documents")
+        .insert({
+          id,
+          org_id: orgId,
+          uploaded_by: null,
+          storage_path: `${orgId}/documents/${id}/seed.pdf`,
+          file_name: "seed.pdf",
+          mime_type: "application/pdf",
+          size_bytes: 1024,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload(ctx, orgId) {
+      const id = randomUUID();
+      return {
+        id,
+        org_id: orgId,
+        uploaded_by: ctx.a.id,
+        storage_path: `${orgId}/documents/${id}/evil.pdf`,
+        file_name: "evil.pdf",
+        mime_type: "application/pdf",
+        size_bytes: 1024,
+      };
+    },
+    update: { file_name: "renamed-by-intruder.pdf" },
   },
   audit_log: {
     seed: (_ctx, orgId) => one("audit_log", { org_id: orgId }),

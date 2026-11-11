@@ -71,6 +71,134 @@ export type Database = {
           },
         ];
       };
+      documents: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          entity_id: string | null;
+          error: string | null;
+          file_name: string;
+          id: string;
+          mime_type: string;
+          org_id: string;
+          page_count: number | null;
+          sha256: string | null;
+          size_bytes: number;
+          status: Database["public"]["Enums"]["document_status"];
+          storage_path: string;
+          updated_at: string;
+          uploaded_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          created_at?: string;
+          entity_id?: string | null;
+          error?: string | null;
+          file_name: string;
+          id?: string;
+          mime_type: string;
+          org_id: string;
+          page_count?: number | null;
+          sha256?: string | null;
+          size_bytes: number;
+          status?: Database["public"]["Enums"]["document_status"];
+          storage_path: string;
+          updated_at?: string;
+          uploaded_by?: string | null;
+        };
+        Update: {
+          attempts?: number;
+          created_at?: string;
+          entity_id?: string | null;
+          error?: string | null;
+          file_name?: string;
+          id?: string;
+          mime_type?: string;
+          org_id?: string;
+          page_count?: number | null;
+          sha256?: string | null;
+          size_bytes?: number;
+          status?: Database["public"]["Enums"]["document_status"];
+          storage_path?: string;
+          updated_at?: string;
+          uploaded_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "documents_entity_id_fkey";
+            columns: ["entity_id"];
+            isOneToOne: false;
+            referencedRelation: "entities";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "documents_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      entities: {
+        Row: {
+          address: string | null;
+          client_name: string | null;
+          code: string | null;
+          created_at: string;
+          id: string;
+          kind: Database["public"]["Enums"]["entity_kind"];
+          meta: NonNullable<Json>;
+          name: string;
+          org_id: string;
+          status: Database["public"]["Enums"]["entity_status"];
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          address?: string | null;
+          client_name?: string | null;
+          code?: string | null;
+          created_at?: string;
+          id?: string;
+          kind: Database["public"]["Enums"]["entity_kind"];
+          meta?: NonNullable<Json>;
+          name: string;
+          org_id: string;
+          status?: Database["public"]["Enums"]["entity_status"];
+          updated_at?: string;
+        };
+        Update: {
+          address?: string | null;
+          client_name?: string | null;
+          code?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["entity_kind"];
+          meta?: NonNullable<Json>;
+          name?: string;
+          org_id?: string;
+          status?: Database["public"]["Enums"]["entity_status"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "entities_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       invites: {
         Row: {
           accepted_at: string | null;
@@ -250,6 +378,32 @@ export type Database = {
     };
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string };
+      confirm_document_upload: {
+        Args: { p_document: string };
+        Returns: {
+          attempts: number;
+          created_at: string;
+          entity_id: string | null;
+          error: string | null;
+          file_name: string;
+          id: string;
+          mime_type: string;
+          org_id: string;
+          page_count: number | null;
+          sha256: string | null;
+          size_bytes: number;
+          status: Database["public"]["Enums"]["document_status"];
+          storage_path: string;
+          updated_at: string;
+          uploaded_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       create_organization: {
         Args: { p_entity_kind: Database["public"]["Enums"]["entity_kind"]; p_name: string };
         Returns: {
@@ -284,13 +438,83 @@ export type Database = {
         }[];
       };
       is_org_member: { Args: { p_org: string }; Returns: boolean };
+      retry_document: {
+        Args: { p_document: string };
+        Returns: {
+          attempts: number;
+          created_at: string;
+          entity_id: string | null;
+          error: string | null;
+          file_name: string;
+          id: string;
+          mime_type: string;
+          org_id: string;
+          page_count: number | null;
+          sha256: string | null;
+          size_bytes: number;
+          status: Database["public"]["Enums"]["document_status"];
+          storage_path: string;
+          updated_at: string;
+          uploaded_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       shares_org_with: { Args: { p_user: string }; Returns: boolean };
       slugify: { Args: { p_text: string }; Returns: string };
       storage_org_id: { Args: { p_name: string }; Returns: string };
+      transition_document: {
+        Args: {
+          p_actor?: string;
+          p_document: string;
+          p_error?: string;
+          p_from: Database["public"]["Enums"]["document_status"][];
+          p_org: string;
+          p_page_count?: number;
+          p_to: Database["public"]["Enums"]["document_status"];
+        };
+        Returns: {
+          attempts: number;
+          created_at: string;
+          entity_id: string | null;
+          error: string | null;
+          file_name: string;
+          id: string;
+          mime_type: string;
+          org_id: string;
+          page_count: number | null;
+          sha256: string | null;
+          size_bytes: number;
+          status: Database["public"]["Enums"]["document_status"];
+          storage_path: string;
+          updated_at: string;
+          uploaded_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
     };
     Enums: {
       audit_action: "insert" | "update" | "delete";
+      document_status:
+        | "uploading"
+        | "queued"
+        | "extracting"
+        | "analyzing"
+        | "validating"
+        | "needs_review"
+        | "ready"
+        | "failed";
       entity_kind: "property" | "job";
+      entity_status: "active" | "archived";
       org_role: "owner" | "admin" | "reviewer" | "member" | "viewer";
     };
     CompositeTypes: {
@@ -406,7 +630,18 @@ export const Constants = {
   public: {
     Enums: {
       audit_action: ["insert", "update", "delete"],
+      document_status: [
+        "uploading",
+        "queued",
+        "extracting",
+        "analyzing",
+        "validating",
+        "needs_review",
+        "ready",
+        "failed",
+      ],
       entity_kind: ["property", "job"],
+      entity_status: ["active", "archived"],
       org_role: ["owner", "admin", "reviewer", "member", "viewer"],
     },
   },
