@@ -95,10 +95,21 @@ Default: 3 attempts, exponential backoff from 5s.
   `renderToStaticMarkup`, plus a print stylesheet (`pdf/styles/print.css`).
 - Playwright `page.pdf({ format: "A4", displayHeaderFooter: true, headerTemplate, footerTemplate })` provides the
   logo/header and "Page X of Y" via `pageNumber`/`totalPages`.
-- Tables: `thead { display: table-header-group }`, `tfoot { display: table-footer-group }`,
-  `tr { break-inside: avoid }`; section headings use `break-after: avoid`.
-- All figures come from `lib/calc` — templates only format.
-- One browser instance per worker process, one context per job.
+- **Pagination is decided in code, not by the browser** (ADR-021): every block and table row has a fixed height in
+  mm (`pdf/layout.ts` ↔ `pdf/styles/print.css`), `paginateTable()` splits tables into per-page chunks, and each page
+  is its own `<section class="page">`. So headers repeat, rows never split, and every break shows
+  carried-forward / brought-forward subtotals taken from `lib/calc` running totals. Long text is truncated
+  (single-line cells), never wrapped.
+- All figures come from `lib/calc` view-models (`buildStatement`, `buildPortfolio`, `buildQuote`) — templates only
+  format.
+- One browser instance per worker process (`worker/pdf/render.ts`), one context per job; `CHROMIUM_PATH` overrides
+  the binary. System fonts only (the worker renders offline). The worker runs TSX templates through
+  `tsconfig.worker.json` (Next keeps `"jsx": "preserve"`).
+- Files: `{org}/reports/{report}.pdf`; a batch's ZIP (`fflate`, stored) at `{org}/batches/{batch}.zip`. Downloads go
+  through `/app/reports/[id]/download` and `/app/reports/batches/[id]/download`, which redirect to 60-second signed
+  URLs after an RLS-checked lookup.
+- Template work: `npm run pdf:preview -- statement 60` writes `.preview/statement-60.html` + `.pdf` from fixtures
+  (instead of an in-app dev route: Next refuses `react-dom/server` in the app bundle).
 
 ## Deployment
 

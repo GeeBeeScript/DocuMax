@@ -122,12 +122,15 @@ export function allocateByAmount<K extends string>(
   return out;
 }
 
-/** "60", "33.33", "12,5 %" → basis points (6000, 3333, 1250) without floating point; null when invalid or > 2 dp. */
-export function parsePercentBp(input: string): number | null {
-  const m = /^(\d{1,3})(?:[.,](\d{1,2}))?$/.exec(input.trim().replace(/\s*%$/, ""));
+/**
+ * "60", "33.33", "12,5 %" → basis points (6000, 3333, 1250) without floating point; null when invalid, > 2 dp or
+ * above `maxBp` (100% by default; markups may go higher).
+ */
+export function parsePercentBp(input: string, maxBp: number = FULL_BP): number | null {
+  const m = /^(\d{1,5})(?:[.,](\d{1,2}))?$/.exec(input.trim().replace(/\s*%$/, ""));
   if (!m) return null;
   const bp = Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
-  return bp <= FULL_BP ? bp : null;
+  return bp <= maxBp ? bp : null;
 }
 
 /** 3333 → "33.33", 6000 → "60". */

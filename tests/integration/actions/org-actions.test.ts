@@ -244,3 +244,58 @@ describe("updateReviewSettings", () => {
     await cleanup([], [settingsMember]);
   });
 });
+
+describe("updateOrganizationSettings", () => {
+  const png = () => new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: "image/png" });
+  const base = { brandColor: "#2f6fff", footerText: "1 Main St", timezone: "America/New_York" };
+
+  it("admins save branding + time zone; a replaced logo is removed from storage", async () => {
+    as(adminUser);
+    const first = `${orgId}/logo-1.png`;
+    const second = `${orgId}/logo-2.png`;
+    expect((await adminUser.client.storage.from("branding").upload(first, png())).error).toBeNull();
+    expect(await actions.updateOrganizationSettings({ ...base, logoPath: first })).toEqual({
+      ok: true,
+      data: undefined,
+    });
+    const { data: org } = await admin
+      .from("organizations")
+      .select("logo_path, brand_color, footer_text, timezone")
+      .eq("id", orgId)
+      .single();
+    expect(org).toEqual({
+      logo_path: first,
+      brand_color: "#2f6fff",
+      footer_text: "1 Main St",
+      timezone: "America/New_York",
+    });
+
+    await adminUser.client.storage.from("branding").upload(second, png());
+    expect((await actions.updateOrganizationSettings({ ...base, logoPath: second })).ok).toBe(true);
+    const { data: files } = await admin.storage.from("branding").list(orgId);
+    expect(files?.map((f) => f.name)).toEqual(["logo-2.png"]);
+    await admin.storage.from("branding").remove([second]);
+  });
+
+  it("refuses members, other orgs' logos, missing uploads and unknown time zones", async () => {
+    const settingsMember = await createUser("act-branding-member");
+    await addMember(orgId, settingsMember, "member");
+    as(settingsMember);
+    expect((await actions.updateOrganizationSettings({ ...base, logoPath: null })).ok).toBe(false);
+    as(owner);
+    expect(
+      (await actions.updateOrganizationSettings({ ...base, logoPath: `${otherOrgId}/logo-1.png` })).ok,
+    ).toBe(false);
+    expect(await actions.updateOrganizationSettings({ ...base, logoPath: `${orgId}/logo-404.png` })).toEqual({
+      ok: false,
+      error: "Upload the logo again.",
+    });
+    expect(
+      (await actions.updateOrganizationSettings({ ...base, logoPath: null, timezone: "Mars/Olympus" })).ok,
+    ).toBe(false);
+    expect(
+      (await actions.updateOrganizationSettings({ ...base, logoPath: null, brandColor: "red" })).ok,
+    ).toBe(false);
+    await cleanup([], [settingsMember]);
+  });
+});

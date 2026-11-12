@@ -6,11 +6,13 @@ import { FormAlert } from "@/components/app/form-alert";
 import { PageHeader } from "@/components/app/page-header";
 import { PillButton } from "@/components/brand/pill-button";
 import { statementsCopy } from "@/content/app";
+import { EntityReportActions } from "@/features/reports/components/generate-dialogs";
 import { EntityStatement } from "@/features/statements/components/entity-statement";
 import { PeriodPicker } from "@/features/statements/components/period-picker";
 import { parsePeriodParams } from "@/features/statements/period-params";
 import { getStatementEntity, loadStatementRecords } from "@/features/statements/queries";
 import { buildStatement } from "@/lib/calc/statement";
+import { canReview } from "@/lib/auth/roles";
 import { requireActiveOrg } from "@/lib/auth/session";
 import { entityLabels } from "@/lib/entities/labels";
 
@@ -53,6 +55,16 @@ export default async function EntityPage({
       </PillButton>
       <PageHeader
         title={entity.name}
+        actions={
+          canReview(ctx.role) && (
+            <EntityReportActions
+              entityId={entity.id}
+              entityName={entity.name}
+              period={selection.period}
+              quotes={ctx.org.entity_kind === "job"}
+            />
+          )
+        }
         description={
           <span className="flex flex-wrap gap-x-4 gap-y-1">
             {facts

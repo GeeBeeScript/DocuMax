@@ -21,6 +21,7 @@ import {
   InviteIdSchema,
   InviteMemberSchema,
   MembershipIdSchema,
+  OrganizationSettingsSchema,
   ReviewSettingsSchema,
   SetActiveOrgSchema,
 } from "./schema";
@@ -208,6 +209,38 @@ export async function updateReviewSettings(input: unknown): Promise<ActionResult
     .select("id");
   if (error) return dbError(error);
   if (!data.length) return fail(FORBIDDEN);
+  revalidatePath("/app", "layout");
+  return ok();
+}
+
+/** Branding (logo, colour, footer) and time zone. Owners/admins; the logo was uploaded by the browser first. */
+export async function updateOrganizationSettings(input: unknown): Promise<ActionResult> {
+  const parsed = OrganizationSettingsSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const ctx = await requireActiveOrg();
+  if (!canManageMembers(ctx.role)) return fail(FORBIDDEN);
+  const { logoPath, brandColor, footerText, timezone } = parsed.data;
+  if (logoPath && !logoPath.startsWith(`${ctx.org.id}/`)) return fail(FORBIDDEN);
+
+  const supabase = await createSupabaseServerClient();
+  if (logoPath && logoPath !== ctx.org.logo_path) {
+    const folder = await supabase.storage
+      .from("branding")
+      .list(ctx.org.id, { search: logoPath.split("/")[1] });
+    if (!folder.data?.some((f) => `${ctx.org.id}/${f.name}` === logoPath))
+      return fail("Upload the logo again.");
+  }
+  const { data, error } = await supabase
+    .from("organizations")
+    .update({ logo_path: logoPath, brand_color: brandColor, footer_text: footerText || null, timezone })
+    .eq("id", ctx.org.id)
+    .select("id");
+  if (error) return dbError(error);
+  if (!data.length) return fail(FORBIDDEN);
+  // The previous logo is no longer referenced.
+  if (ctx.org.logo_path && ctx.org.logo_path !== logoPath) {
+    await supabase.storage.from("branding").remove([ctx.org.logo_path]);
+  }
   revalidatePath("/app", "layout");
   return ok();
 }

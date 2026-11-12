@@ -25,13 +25,26 @@ const dotClass: Record<StatusTone, string> = {
   danger: "bg-danger",
 };
 
-/** Document processing status chip. */
-export function StatusBadge({ status, className }: { status: DocumentStatus; className?: string }) {
-  const { label, tone } = DOCUMENT_STATUS_META[status];
+/** A status chip in one of the shared tones (any status machine maps its states to these). */
+export function ToneBadge({
+  tone,
+  label,
+  className,
+}: {
+  tone: StatusTone;
+  label: string;
+  className?: string;
+}) {
   return (
     <span className={cn(statusToneVariants({ tone }), className)}>
       <span aria-hidden className={cn("size-1.5 rounded-full", dotClass[tone])} />
       {label}
     </span>
   );
+}
+
+/** Document processing status chip. */
+export function StatusBadge({ status, className }: { status: DocumentStatus; className?: string }) {
+  const { label, tone } = DOCUMENT_STATUS_META[status];
+  return <ToneBadge tone={tone} label={label} className={className} />;
 }
