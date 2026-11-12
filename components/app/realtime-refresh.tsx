@@ -5,39 +5,45 @@ import { useThrottledRefresh } from "@/features/documents/hooks/use-throttled-re
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /**
- * Refreshes the server-rendered reports page when a report or batch of this org changes (Supabase Realtime; RLS
- * applies). While anything is still generating it also refreshes every few seconds, in case an event is missed.
+ * Re-renders a server page when rows of the given tables change for this org (Supabase Realtime; RLS applies).
+ * While `active` (something still in progress) it also refreshes every few seconds, in case an event is missed.
  */
-export function ReportsLive({ orgId, active }: { orgId: string; active: boolean }) {
+export function RealtimeRefresh({
+  orgId,
+  tables,
+  active,
+}: {
+  orgId: string;
+  tables: readonly string[];
+  active: boolean;
+}) {
   const refresh = useThrottledRefresh(1000);
+  const key = tables.join(",");
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | undefined;
     (async () => {
+      // Authenticate the socket first, or RLS hides every event.
       const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       await supabase.realtime.setAuth(data.session?.access_token ?? null);
-      channel = supabase
-        .channel(`reports:${orgId}`)
-        .on(
+      channel = supabase.channel(`refresh:${key}:${orgId}`);
+      for (const table of key.split(",")) {
+        channel.on(
           "postgres_changes",
-          { event: "*", schema: "public", table: "reports", filter: `org_id=eq.${orgId}` },
+          { event: "*", schema: "public", table, filter: `org_id=eq.${orgId}` },
           refresh,
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "report_batches", filter: `org_id=eq.${orgId}` },
-          refresh,
-        )
-        .subscribe();
+        );
+      }
+      channel.subscribe();
     })();
     return () => {
       cancelled = true;
       if (channel) void supabase.removeChannel(channel);
     };
-  }, [orgId, refresh]);
+  }, [orgId, key, refresh]);
 
   useEffect(() => {
     if (!active) return;

@@ -43,7 +43,7 @@ a row to another org (the `org_id` column is immutable — enforced by a trigger
 ## Storage
 
 - Private buckets: `documents`, `reports`, `imports`, `branding`.
-- Who writes what: `documents` / `imports` — members and up; `branding` — owners and admins (PNG/JPG/WEBP ≤ 2 MB);
+- Who writes what: `documents` / `imports` — members and up (`imports`: CSV ≤ 5 MB); `branding` — owners and admins (PNG/JPG/WEBP ≤ 2 MB);
   `reports` — only the worker (service role), so a generated PDF can't be replaced by a user. Everyone in the org
   reads. Deletes: owners and admins. (Phase 8 migration; covered by `tests/integration/tenancy/storage.test.ts`.)
 - Object path always starts with the org id: `{org_id}/documents/{document_id}/{file_name}`.

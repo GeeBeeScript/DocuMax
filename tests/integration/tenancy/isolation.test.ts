@@ -332,6 +332,23 @@ const SEEDERS: Record<string, Seeder> = {
     }),
     update: { status: "ready" },
   },
+  imports: {
+    async seed(_ctx, orgId) {
+      const { data, error } = await admin
+        .from("imports")
+        .insert({ org_id: orgId, file_name: "seed.csv", storage_path: `${orgId}/imports/seed.csv` })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({
+      org_id: orgId,
+      file_name: "intruder.csv",
+      storage_path: `${orgId}/imports/intruder.csv`,
+    }),
+    update: { status: "done" },
+  },
   document_pages: {
     async seed(ctx, orgId) {
       const doc = await SEEDERS.documents.seed(ctx, orgId);

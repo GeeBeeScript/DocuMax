@@ -229,3 +229,24 @@ Choices:
   lock; the call that completes the batch enqueues `batch-zip`.
 - **No in-app preview route:** Next refuses `react-dom/server` in the app bundle, so template work uses
   `npm run pdf:preview` (HTML + real PDF from fixtures).
+
+## ADR-022 — Exports and CSV imports
+
+**Status:** Accepted (2026-11-12)
+
+- **One CSV row = one record.** Line items are exported (own CSV / XLSX sheet) but not imported; spreadsheets of
+  bills rarely carry them reliably. Imported records count 100% to their entity like any unsplit record.
+- **Strict, explainable parsing:** dates must be ISO (`03/04/2026` is ambiguous between US and EU order); amounts
+  go through `parseToCents` (no floats); categories and document types accept the code or the label; a property or
+  job is matched by reference code, then exact name — a value that matches nothing is an error, not silently
+  dropped. Any problem keeps the whole row out (never a partial record) and is listed in the error report.
+- **Imported records are reviewed like extracted ones** (same `lib/validation`, same queue, audit actor = importer).
+  "Approve on import" (reviewers only) approves only records without issues.
+- **Formula injection:** CSV text cells starting with `= + - @`, tab or CR get a leading apostrophe; numeric
+  columns are never escaped (a negative amount must stay a number) and the import strips the apostrophe again, so
+  exports round-trip. XLSX writes strings as text, never formulas.
+- **Plain, re-importable CSV:** money as `1260.57`, ISO dates, labels for enums, a UTF-8 BOM for Excel (stripped on
+  import). Export headers are the import's default names, so an exported file maps itself.
+- **Limits:** imports ≤ 5 MB / 5,000 rows (split larger files); exports are built in memory and capped at 20,000
+  records per file — streaming can come later if needed. The last column mapping is stored on the organization
+  (`organizations.import_mapping`) rather than in a separate table.
