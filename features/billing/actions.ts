@@ -1,5 +1,7 @@
 "use server";
 
+import { RATE_LIMITED } from "@/lib/security/rate-limit";
+import { allow } from "@/lib/security/rate-limit.server";
 import { billingCopy } from "@/content/app";
 import { fail, failCode, invalid, ok, type ActionResult } from "@/lib/actions/result";
 import { ForbiddenError, hasRole } from "@/lib/auth/roles";
@@ -35,6 +37,7 @@ export async function startCheckout(input: unknown): Promise<ActionResult<{ url:
   if (!parsed.success) return invalid(parsed.error);
   const ctx = await ownerContext();
   if (!ctx) return fail(new ForbiddenError().message);
+  if (!(await allow("billing", ctx.userId))) return fail(RATE_LIMITED);
   let api: ReturnType<typeof stripe>;
   try {
     api = stripe(); // not configured → say so before anything else
@@ -94,6 +97,7 @@ export async function startCheckout(input: unknown): Promise<ActionResult<{ url:
 export async function openBillingPortal(): Promise<ActionResult<{ url: string }>> {
   const ctx = await ownerContext();
   if (!ctx) return fail(new ForbiddenError().message);
+  if (!(await allow("billing", ctx.userId))) return fail(RATE_LIMITED);
   const supabase = await createSupabaseServerClient();
   const { data: sub } = await supabase
     .from("subscriptions")

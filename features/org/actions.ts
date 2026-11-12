@@ -1,5 +1,7 @@
 "use server";
 
+import { RATE_LIMITED } from "@/lib/security/rate-limit";
+import { allow } from "@/lib/security/rate-limit.server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { fail, failCode, invalid, ok, type ActionResult } from "@/lib/actions/result";
@@ -80,6 +82,7 @@ export async function inviteMember(input: unknown): Promise<ActionResult<{ invit
   if (!parsed.success) return invalid(parsed.error);
   const ctx = await requireActiveOrg();
   if (!canManageMembers(ctx.role)) return fail(FORBIDDEN);
+  if (!(await allow("invite", ctx.userId))) return fail(RATE_LIMITED);
 
   const supabase = await createSupabaseServerClient();
   const { token, hash } = createInviteToken();

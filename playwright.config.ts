@@ -20,6 +20,8 @@ export default defineConfig({
       : [
           {
             command: "npm run dev",
+            // Many sign-ups from one IP in a minute: the per-IP auth limit would trip (it's unit-tested instead).
+            env: { RATE_LIMIT_DISABLED: "1" },
             url: "http://localhost:3000",
             reuseExistingServer: true,
             timeout: 120_000,
