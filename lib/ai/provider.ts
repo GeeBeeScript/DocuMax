@@ -1,5 +1,6 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { generateText, LanguageModel } from "ai";
 import { serverEnv } from "@/lib/env";
 import { createDevExtractionModel } from "./dev-model";
@@ -23,6 +24,12 @@ export function extractionModel(): LanguageModel {
     case "openai": {
       if (!env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is required for AI_PROVIDER=openai");
       return createOpenAI({ apiKey: env.OPENAI_API_KEY })(env.AI_MODEL);
+    }
+    case "openrouter": {
+      // One key, many models: AI_MODEL is an OpenRouter id, e.g. "anthropic/claude-sonnet-5.5".
+      if (!env.OPENROUTER_API_KEY)
+        throw new Error("OPENROUTER_API_KEY is required for AI_PROVIDER=openrouter");
+      return createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })(env.AI_MODEL);
     }
     case "mock":
       // Checked here, not in env validation: the web app also runs with NODE_ENV=production and never uses AI.
