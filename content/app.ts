@@ -788,3 +788,61 @@ export const dataCopy = {
   },
   entityExport: { csv: "Export CSV", xlsx: "Export Excel" },
 };
+
+export const billingCopy = {
+  title: "Billing",
+  description: "Your plan, this month's usage, and payment details.",
+  quotaExceeded: "You've used all of this month's documents. Upgrade to keep uploading.",
+  seatLimit: (seats: number) =>
+    `Your plan includes ${seats} ${seats === 1 ? "seat" : "seats"}, and they're all taken or invited. Upgrade to add teammates.`,
+  notConfigured: "Billing isn't set up yet.",
+  notAvailable: "This plan can't be bought online yet — contact us.",
+  ownersOnly: "Only owners can change the plan or payment details.",
+  current: "Current plan",
+  status: {
+    none: "",
+    active: "Active",
+    trialing: "Trial",
+    past_due: "Payment failed — update your card",
+    canceled: "Canceled",
+    unpaid: "Unpaid",
+    incomplete: "Incomplete",
+    incomplete_expired: "Expired",
+    paused: "Paused",
+  } as Record<string, string>,
+  renews: (date: string) => `Renews ${date}`,
+  ends: (date: string) => `Ends ${date} — you'll move to Free`,
+  paymentFailed: "Your last payment failed. Update your card to keep your plan.",
+  usage: {
+    title: "This month",
+    documents: "Documents",
+    seats: "Seats",
+    of: (used: number, cap: number | null) =>
+      cap == null
+        ? `${used.toLocaleString("en-US")} (unlimited)`
+        : `${used.toLocaleString("en-US")} of ${cap.toLocaleString("en-US")}`,
+    meterLabel: (used: number, cap: number | null) =>
+      cap == null ? `${used} documents this month` : `${used} of ${cap} documents used this month`,
+    resets: (date: string) => `Resets ${date}`,
+  },
+  intervals: { monthly: "Monthly", yearly: "Yearly" },
+  perMonth: "/ month",
+  billedYearly: "billed yearly",
+  upgrade: (plan: string) => `Upgrade to ${plan}`,
+  switchTo: (plan: string) => `Switch to ${plan}`,
+  manage: "Manage billing",
+  contact: "Contact sales",
+  yourPlan: "Your plan",
+  checkoutSuccess: "Thanks! Your plan updates as soon as Stripe confirms the payment.",
+  overLimit: {
+    title: "Monthly limit reached",
+    body: (plan: string, cap: number) =>
+      `The ${plan} plan includes ${cap} documents a month, and they're used up.`,
+    partial: (n: number) => `Only ${n} more ${n === 1 ? "document fits" : "documents fit"} this month.`,
+    uploadSome: (n: number) => `Upload the first ${n}`,
+    upgrade: "See plans",
+    askOwner: "Ask an owner of your organization to upgrade.",
+    close: "Not now",
+  },
+  meterLink: "Usage & billing",
+};

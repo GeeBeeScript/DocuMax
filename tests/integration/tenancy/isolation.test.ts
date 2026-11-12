@@ -349,6 +349,32 @@ const SEEDERS: Record<string, Seeder> = {
     }),
     update: { status: "done" },
   },
+  subscriptions: {
+    // createOrg already gives every test org a subscription row: reuse it.
+    async seed(_ctx, orgId) {
+      const { data, error } = await admin.from("subscriptions").select().eq("org_id", orgId).single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({ org_id: orgId, plan: "enterprise", status: "active" }),
+    update: { plan: "enterprise" },
+  },
+  usage_counters: {
+    async seed(_ctx, orgId) {
+      const { data, error } = await admin
+        .from("usage_counters")
+        .upsert(
+          { org_id: orgId, period_start: "2026-10-01", documents_used: 3 },
+          { onConflict: "org_id,period_start" },
+        )
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({ org_id: orgId, period_start: "2020-01-01", documents_used: 0 }),
+    update: { documents_used: 0 },
+  },
   document_pages: {
     async seed(ctx, orgId) {
       const doc = await SEEDERS.documents.seed(ctx, orgId);

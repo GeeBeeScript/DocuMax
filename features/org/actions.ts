@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { fail, invalid, ok, type ActionResult } from "@/lib/actions/result";
+import { fail, failCode, invalid, ok, type ActionResult } from "@/lib/actions/result";
+import { billingCopy } from "@/content/app";
 import { requireActiveOrg, requireUser } from "@/lib/auth/session";
 import {
   assignableRoles,
@@ -96,6 +97,9 @@ export async function inviteMember(input: unknown): Promise<ActionResult<{ invit
     token_hash: hash,
     invited_by: ctx.userId,
   });
+  if (error?.message === "seat_limit") {
+    return failCode("seat_limit", billingCopy.seatLimit(Number(error.hint) || 1));
+  }
   if (error) return dbError(error);
 
   revalidatePath(MEMBERS_PATH);

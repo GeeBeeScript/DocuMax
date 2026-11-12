@@ -56,14 +56,35 @@ export async function createUser(label: string): Promise<TestUser> {
   return { id: data.user.id, email, client };
 }
 
-/** Creates an org through the real RPC, so the caller becomes its owner. */
-export async function createOrg(owner: TestUser, name: string, kind: "property" | "job" = "property") {
+/**
+ * Creates an org through the real RPC (the caller becomes its owner). Test orgs are on an active Business subscription unless `plan` says otherwise, so
+ * seat and document caps (Phase 10) only matter in the tests about them.
+ */
+export async function createOrg(
+  owner: TestUser,
+  name: string,
+  kind: "property" | "job" = "property",
+  { plan = "business" }: { plan?: "free" | "pro" | "business" | "enterprise" } = {},
+) {
   const { data, error } = await owner.client.rpc("create_organization", {
     p_name: name,
     p_entity_kind: kind,
   });
   if (error || !data) throw error ?? new Error("create_organization failed");
+  if (plan !== "free") await setPlan(data.id, plan);
   return data;
+}
+
+/** Puts an org on a plan as if Stripe said so (service role). */
+export async function setPlan(
+  orgId: string,
+  plan: "free" | "pro" | "business" | "enterprise",
+  status = "active",
+) {
+  const { error } = await adminClient()
+    .from("subscriptions")
+    .upsert({ org_id: orgId, plan, status }, { onConflict: "org_id" });
+  if (error) throw error;
 }
 
 /** Adds a member directly (service role) — invites are covered by their own tests. */

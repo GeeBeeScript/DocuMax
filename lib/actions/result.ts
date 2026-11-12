@@ -2,7 +2,18 @@ import type { z } from "zod";
 
 /** Return type of every Server Action (docs/CONVENTIONS.md → data access). */
 export type ActionResult<T = void> =
-  { ok: true; data: T } | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+  | { ok: true; data: T }
+  | { ok: false; error: string; fieldErrors?: Record<string, string[]>; code?: ActionErrorCode };
+
+/** Machine-readable failure reasons the UI reacts to (e.g. open the upgrade dialog). */
+export type ActionErrorCode = "quota_exceeded" | "seat_limit" | "billing_not_configured";
+
+export function failCode(
+  code: ActionErrorCode,
+  error: string,
+): { ok: false; error: string; code: ActionErrorCode } {
+  return { ok: false, error, code };
+}
 
 export function ok(): ActionResult<void>;
 export function ok<T>(data: T): ActionResult<T>;

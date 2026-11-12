@@ -9,7 +9,7 @@ import {
   resolveUploadType,
   uploadRejectionMessage,
 } from "@/lib/documents/upload-rules";
-import { confirmUpload, requestUpload } from "../actions";
+import { cancelUpload, confirmUpload, requestUpload } from "../actions";
 import { putWithProgress, sha256Hex } from "../upload-client";
 
 export const UPLOAD_CONCURRENCY = 3;
@@ -28,13 +28,21 @@ interface Job {
 export function useUploadQueue({
   concurrency = UPLOAD_CONCURRENCY,
   onUploaded,
-}: { concurrency?: number; onUploaded?: (documentId: string) => void } = {}) {
+  onQuotaExceeded,
+}: {
+  concurrency?: number;
+  onUploaded?: (documentId: string) => void;
+  /** The monthly document cap was reached (Phase 10): the caller shows the upgrade dialog. */
+  onQuotaExceeded?: () => void;
+} = {}) {
   const [items, setItems] = useState<UploadItem[]>([]);
   const pending = useRef<Job[]>([]);
   const active = useRef(0);
   const counter = useRef(0);
   const onUploadedRef = useRef(onUploaded);
   onUploadedRef.current = onUploaded;
+  const onQuotaRef = useRef(onQuotaExceeded);
+  onQuotaRef.current = onQuotaExceeded;
 
   const update = useCallback((key: string, patch: Partial<UploadItem>) => {
     setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ...patch } : i)));
@@ -52,7 +60,10 @@ export function useUploadQueue({
           sha256,
           entityId,
         });
-        if (!ticket.ok) return update(key, { status: "error", error: ticket.error });
+        if (!ticket.ok) {
+          if (ticket.code === "quota_exceeded") onQuotaRef.current?.();
+          return update(key, { status: "error", error: ticket.error });
+        }
 
         const { documentId, uploadUrl, duplicateOf } = ticket.data;
         update(key, {
@@ -60,7 +71,13 @@ export function useUploadQueue({
           progress: 0,
           warning: duplicateOf ? documentsCopy.tray.duplicate(duplicateOf.fileName) : undefined,
         });
-        await putWithProgress(uploadUrl, file, mimeType, (progress) => update(key, { progress }));
+        try {
+          await putWithProgress(uploadUrl, file, mimeType, (progress) => update(key, { progress }));
+        } catch (error) {
+          // The file never arrived: drop the pending document so it doesn't count against the month's cap.
+          await cancelUpload({ documentId }).catch(() => undefined);
+          throw error;
+        }
 
         update(key, { status: "confirming", progress: 100 });
         const confirmed = await confirmUpload({ documentId });
