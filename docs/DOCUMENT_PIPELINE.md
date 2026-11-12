@@ -35,16 +35,18 @@ photo ≈ 0.9 s. All key strings (supplier, invoice no., dates, tax id, totals) 
 
 ## Stage 2 — AI extraction (Phase 5)
 
-- Model: `extractionModel()` from `lib/ai/provider.ts` (provider/model via env, ADR-003). `lib/ai/extract.ts` calls
+- Model: `extractionModel()` from `lib/ai/provider.ts` (provider/model via env, ADR-003). Default: open-weight
+  `nvidia/nemotron-3.5-super-vl` via OpenRouter, zero-retention routing only (ADR-018). `lib/ai/extract.ts` calls
   `generateText` with `Output.object({ schema: ModelExtraction })` — the AI SDK uses each provider's native structured
   output (for current Claude models: `output_config.format`; they reject forced tool use).
 - Input: concatenated page text with page markers (`--- page 2 ---`), org context (entity kind, entity names/codes
   for matching, known suppliers), and the category list. If OCR confidence is low and the provider supports vision,
   page images may be attached as well.
 - The prompt instructs the model to **copy values as printed** and never compute missing totals.
-- **No sampling parameters** (no `temperature`): current Claude models reject them, and the output is constrained by
-  the schema instead (ADR-015). Anthropic requests opt into server-side refusal fallbacks (`fallbacks: "default"`);
-  optional `AI_EFFORT` sets reasoning effort.
+- **No sampling parameters** (no `temperature`): several current models reject them, and the output is constrained
+  by the schema instead (ADR-015). OpenRouter requests deny data collection, require zero retention and require
+  structured-output support from the serving host (ADR-018); Anthropic requests opt into server-side refusal
+  fallbacks; optional `AI_EFFORT` sets reasoning effort where supported.
 - Two schema layers (ADR-015): the model fills `ModelExtraction` (plain JSON types only, so every provider accepts
   it); the answer must then pass the strict `InvoiceExtraction` (ISO dates, ISO 4217, confidence 0–1). Up to 2
   retries, each with the validation errors fed back; then the document fails with a readable message. A refusal

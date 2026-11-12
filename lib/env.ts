@@ -16,8 +16,11 @@ const serverSchema = clientSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
   /** `mock` = deterministic dev/test model (lib/ai/dev-model.ts); extractionModel() refuses it in production. */
-  AI_PROVIDER: z.enum(["anthropic", "openai", "openrouter", "mock"]).default("anthropic"),
-  AI_MODEL: z.string().min(1).default("claude-sonnet-5-5"),
+  AI_PROVIDER: z.enum(["anthropic", "openai", "openrouter", "mock"]).default("openrouter"),
+  /** Optional: each provider has a default model (lib/ai/provider.ts → DEFAULT_MODELS). */
+  AI_MODEL: z.string().min(1).optional(),
+  /** OpenRouter: only route to zero-data-retention endpoints (default on; off only for evals on free models). */
+  OPENROUTER_ZDR: z.stringbool().default(true),
   /** Optional reasoning effort for providers that support it (Anthropic: low … max). Unset = model default. */
   AI_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).optional(),
   ANTHROPIC_API_KEY: z.string().optional(),

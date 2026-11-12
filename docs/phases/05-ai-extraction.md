@@ -1,4 +1,4 @@
-# Phase 5 — AI extraction
+# Phase 5 — AI extraction ✅
 
 **Goal:** turn page text into the fixed, schema-validated structure with per-field confidence.
 
@@ -30,10 +30,7 @@
 - `map-extraction` unit tests (cents parsing, confidence combination, entity matching).
 - AI calls mocked in CI; eval script run manually / nightly.
 
-## Status (2026-11-14): built, real-model eval pending
-
-Not marked done: the main acceptance criterion needs a run against a real model, which needs an API key in the
-environment (none is configured yet).
+## Completion evidence (2026-11-14)
 
 - [x] `lib/ai/extraction-schema.ts` (two layers, `SCHEMA_VERSION` 1), `lib/ai/prompt.ts`, `lib/ai/extract.ts`
       (structured output, retries with validation feedback, usage incl. failed attempts, refusal handling).
@@ -46,14 +43,8 @@ environment (none is configured yet).
 - [x] **Model output never feeds arithmetic** — amounts are strings parsed by `lib/calc` (tests).
 - [x] Tests: schema on recorded outputs (valid / partially null / invalid / malformed → retry), `map-extraction`
       unit tests, mocked AI in CI (unit 255, integration 249), E2E with the dev model (13).
-- [~] **≥ 90% of fixtures correct** — met with an open model, not yet with the configured default (see below).
-
-## To finish
-
-1. Add an Anthropic API key to the environment (Settings → environment → network secrets for
-   `api.anthropic.com`, header `x-api-key`), or `ANTHROPIC_API_KEY` in `.env.local` locally.
-2. `npm run eval:extraction` (≈ 9 model calls). If < 90%, iterate on `lib/ai/prompt.ts` against the eval.
-3. Record the result here and mark the phase done.
+- [x] **≥ 90% of fixtures correct** — with the default model (ADR-018): 9/9 and 9/9 on two full runs, plus 4/4 of a
+      third that stopped when the account's credit ran out (runs 5–7 below).
 
 ## Eval results
 
@@ -64,6 +55,18 @@ environment (none is configured yet).
 | 2026-11-14 | same, after the OCR fix                                | 8/9 (89%)      | utility bill "Statement date" not read as the issue date (varied between runs) → prompt now names common date labels                                            |
 | 2026-11-14 | same, after the prompt change                          | **9/9 (100%)** | ≈ 1K input + 4K output tokens and 16–98 s per document on the free endpoint                                                                                     |
 
-`anthropic/claude-sonnet-5.5` (the configured default, ADR-003) has not run yet: the OpenRouter account needs
-credits. The phase is marked done once the model chosen as default passes. One 9-fixture run is a small sample (the
-open model's results varied between runs); re-run before relying on a single score.
+Production configuration — `nvidia/nemotron-3.5-super-vl` (paid endpoint), zero-retention routing:
+
+| Run | Prompt                                        | Result               | Notes                                                            |
+| --- | --------------------------------------------- | -------------------- | ---------------------------------------------------------------- |
+| 1   | as above                                      | 9/9                  |                                                                  |
+| 2   | as above                                      | 8/9                  | guessed USD on an invoice that prints no currency                |
+| 3   | "never infer currency" wording                | 7/9                  | over-corrected: returned null although "$" was printed           |
+| 4   | same                                          | 9/9                  |                                                                  |
+| 5   | currency from printed code/symbol ($ → USD …) | **9/9**              | final prompt                                                     |
+| 6   | same                                          | **9/9**              |                                                                  |
+| 7   | same                                          | **4/4** (+5 not run) | stopped: OpenRouter credit exhausted (errors, not wrong answers) |
+
+≈ $0.02 per 9-document run (≈ 1K input + 4–6K output tokens per document), 5–30 s per document. Claude Sonnet 5.5
+was not measured (no credit); the owner chose the open model. Currency was the only unstable field — re-run the
+eval twice after any prompt or model change.
