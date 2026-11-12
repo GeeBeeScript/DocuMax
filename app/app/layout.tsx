@@ -33,15 +33,16 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       switcher={
         <OrgSwitcher orgs={orgs} activeId={ctx.org.id} onSwitch={switchOrg} labels={shellCopy.orgSwitcher} />
       }
-      nav={<AppNav entityKind={ctx.org.entity_kind} />}
+      nav={<AppNav entityKind={ctx.org.entity_kind} role={ctx.role} />}
     />
   );
 
   return (
     <div className="min-h-dvh bg-canvas lg:grid lg:grid-cols-[16rem_1fr]">
-      <aside className="sticky top-0 hidden h-dvh border-r border-gray-200 bg-paper lg:block">
-        {sidebar}
-      </aside>
+      {/* The column paints the full page height; the sidebar inside it stays in view. */}
+      <div className="hidden border-r border-gray-200 bg-paper lg:block">
+        <aside className="sticky top-0 h-dvh">{sidebar}</aside>
+      </div>
       <div className="flex min-w-0 flex-col">
         <TopBar
           menuLabel={shellCopy.openNav}

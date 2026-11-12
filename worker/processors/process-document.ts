@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { SYSTEM_ACTOR_ID } from "@/lib/audit/actors";
 import { forOrg } from "@/lib/db/org-scope";
 import type { DocumentStatus } from "@/lib/documents/status";
 import { ExtractionError, extractInvoice, type ExtractOptions } from "@/lib/ai/extract";
@@ -24,7 +25,8 @@ import type { Database } from "@/lib/supabase/database.types";
  * (PipelineError) fail the document immediately with a readable message, anything else is retried by BullMQ.
  */
 
-export const WORKER_ACTOR_ID = "00000000-0000-0000-0000-000000000000";
+/** Audit actor for the worker's writes (lib/audit/actors.ts). */
+export const WORKER_ACTOR_ID = SYSTEM_ACTOR_ID;
 
 /** Cap on org context sent with each extraction (entities / known suppliers). */
 const CONTEXT_LIMIT = 300;

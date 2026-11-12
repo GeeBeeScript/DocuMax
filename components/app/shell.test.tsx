@@ -106,6 +106,15 @@ describe("AppNav", () => {
     expect(screen.getByRole("link", { name: "Team" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
   });
+
+  it("shows role-limited items only to those roles", () => {
+    const { unmount } = render(<AppNav entityKind="property" role="reviewer" />);
+    expect(screen.getByRole("link", { name: "Review" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Audit log" })).toBeNull();
+    unmount();
+    render(<AppNav entityKind="property" role="admin" />);
+    expect(screen.getByRole("link", { name: "Audit log" })).toBeInTheDocument();
+  });
 });
 
 describe("OrgSwitcher", () => {

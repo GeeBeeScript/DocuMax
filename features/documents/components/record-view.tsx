@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
-import { Sparkles } from "lucide-react";
+import { ClipboardCheck, Sparkles } from "lucide-react";
 import { ConfidencePill } from "@/components/app/confidence-pill";
 import { DataTable } from "@/components/app/data-table";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormAlert } from "@/components/app/form-alert";
 import { Money } from "@/components/app/money";
+import { PillButton } from "@/components/brand/pill-button";
 import { documentsCopy } from "@/content/app";
 import type { DocumentRecord } from "../queries";
 
@@ -82,7 +83,14 @@ export function RecordView({
 
   return (
     <div className="flex flex-col gap-6">
-      <FormAlert tone="info">{copy.readOnlyNote}</FormAlert>
+      <div className="flex flex-wrap items-center gap-3">
+        <FormAlert tone="info" className="flex-1">
+          {copy.readOnlyNote}
+        </FormAlert>
+        <PillButton href={`/app/review/${r.id}`} variant="outline" size="sm">
+          <ClipboardCheck aria-hidden /> {copy.openInReview}
+        </PillButton>
+      </div>
       <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
         {rows.map((row) => (
           <div key={row.key} className="flex flex-col gap-1 border-b border-gray-100 pb-3">

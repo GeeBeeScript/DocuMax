@@ -21,3 +21,10 @@ export const AcceptInviteSchema = z.object({ token: z.string().min(16).max(128) 
 
 export type CreateOrgInput = z.infer<typeof CreateOrgSchema>;
 export type InviteMemberInput = z.infer<typeof InviteMemberSchema>;
+
+export const ReviewSettingsSchema = z.object({
+  /** Shown as a percentage; stored as 0–1 in organizations.review_threshold. */
+  thresholdPercent: z.number("Enter a whole number from 50 to 100.").int().min(50).max(100),
+  autoApprove: z.boolean(),
+});
+export type ReviewSettingsInput = z.infer<typeof ReviewSettingsSchema>;
