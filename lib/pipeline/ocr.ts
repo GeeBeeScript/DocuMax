@@ -40,7 +40,10 @@ export async function createTesseractEngine({
     Array.from({ length: workers }, async () => {
       const worker = await createWorker(lang, OEM.LSTM_ONLY, { langPath, cachePath, gzip: true });
       await worker.setParameters({
-        tessedit_pageseg_mode: PSM.AUTO,
+        // Single uniform block, not automatic layout: AUTO silently dropped a receipt's TOTAL line (and reported
+        // higher confidence for it); SINGLE_BLOCK keeps every line and reads table rows left to right, so labels
+        // stay next to their amounts (ADR-013).
+        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
         user_defined_dpi: String(PIPELINE.OCR_DPI),
         preserve_interword_spaces: "1",
       });

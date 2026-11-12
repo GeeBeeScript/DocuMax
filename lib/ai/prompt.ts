@@ -29,7 +29,7 @@ How to fill values:
 - Copy values exactly as printed. Never calculate, add up, round or infer a number that is not printed on the document. If the total is not printed, total.value is null, even if you could compute it from the lines. Downstream code does all arithmetic and checks it.
 - Amounts (subtotal, tax amount, total, unit prices, line amounts) are strings with the digits as printed, without currency symbols or thousands separators, using "." as the decimal separator (convert "1.234,56" to "1234.56"). Negative amounts (credits) keep a leading "-".
 - tax.rate is the percentage as printed, without the % sign ("8.25"), or null if not printed.
-- Dates are ISO "YYYY-MM-DD". Convert only when the date is unambiguous; if day and month could be swapped and nothing on the document settles it, give your best reading with confidence at most 0.5.
+- issueDate is the date the document was issued, whatever it is called on the page ("invoice date", "date", "bill date", "statement date"); dueDate is the payment due date ("due", "payment due", "pay by"). Dates are ISO "YYYY-MM-DD". Convert only when the date is unambiguous; if day and month could be swapped and nothing on the document settles it, give your best reading with confidence at most 0.5.
 - currency is the ISO 4217 code ("USD", "EUR", "GBP"). Use a printed code or an unambiguous symbol; if there is no indication at all, null.
 - supplier is who issued the document (the seller), never the customer being billed.
 - invoiceNumber is the document's own number (invoice / receipt / credit note number), not an order or customer number.
