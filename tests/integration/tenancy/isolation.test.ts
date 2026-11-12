@@ -209,6 +209,59 @@ const SEEDERS: Record<string, Seeder> = {
     }),
     update: { amount_cents: 1 },
   },
+  validation_issues: {
+    async seed(ctx, orgId) {
+      const record = await SEEDERS.records.seed(ctx, orgId);
+      const { data, error } = await admin
+        .from("validation_issues")
+        .insert({
+          org_id: orgId,
+          record_id: String(record.id),
+          code: "no_entity",
+          severity: "warning",
+          message: "seed",
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({
+      org_id: orgId,
+      record_id: rows.records?.b.id,
+      code: "duplicate",
+      severity: "error",
+      message: "forged",
+    }),
+    // Clearing someone else's error so their record looks clean.
+    update: { resolved_at: new Date(0).toISOString() },
+  },
+  review_actions: {
+    async seed(ctx, orgId) {
+      const record = await SEEDERS.records.seed(ctx, orgId);
+      const { data, error } = await admin
+        .from("review_actions")
+        .insert({
+          org_id: orgId,
+          record_id: String(record.id),
+          action: "correct",
+          field: "total_cents",
+          before: 1,
+          after: 2,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (ctx, orgId) => ({
+      org_id: orgId,
+      record_id: rows.records?.b.id,
+      actor_id: ctx.a.id,
+      action: "approve",
+    }),
+    update: { reason: "tampered" },
+  },
   document_pages: {
     async seed(ctx, orgId) {
       const doc = await SEEDERS.documents.seed(ctx, orgId);

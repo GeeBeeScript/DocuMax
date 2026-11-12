@@ -466,6 +466,7 @@ export type Database = {
       };
       organizations: {
         Row: {
+          auto_approve: boolean;
           brand_color: string | null;
           created_at: string;
           created_by: string | null;
@@ -480,6 +481,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          auto_approve?: boolean;
           brand_color?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -493,6 +495,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          auto_approve?: boolean;
           brand_color?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -667,12 +670,140 @@ export type Database = {
           },
         ];
       };
+      review_actions: {
+        Row: {
+          action: Database["public"]["Enums"]["review_action_type"];
+          actor_id: string | null;
+          after: Json | null;
+          before: Json | null;
+          created_at: string;
+          field: string | null;
+          id: string;
+          org_id: string;
+          reason: string | null;
+          record_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: Database["public"]["Enums"]["review_action_type"];
+          actor_id?: string | null;
+          after?: Json | null;
+          before?: Json | null;
+          created_at?: string;
+          field?: string | null;
+          id?: string;
+          org_id: string;
+          reason?: string | null;
+          record_id: string;
+        };
+        Update: {
+          action?: Database["public"]["Enums"]["review_action_type"];
+          actor_id?: string | null;
+          after?: Json | null;
+          before?: Json | null;
+          created_at?: string;
+          field?: string | null;
+          id?: string;
+          org_id?: string;
+          reason?: string | null;
+          record_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "review_actions_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "review_actions_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "review_actions_record_id_fkey";
+            columns: ["record_id"];
+            isOneToOne: false;
+            referencedRelation: "records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      validation_issues: {
+        Row: {
+          code: string;
+          created_at: string;
+          details: NonNullable<Json>;
+          field: string | null;
+          id: string;
+          message: string;
+          org_id: string;
+          record_id: string;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          severity: Database["public"]["Enums"]["issue_severity"];
+        };
+        ComputedFields: never;
+        Insert: {
+          code: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          field?: string | null;
+          id?: string;
+          message: string;
+          org_id: string;
+          record_id: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          severity: Database["public"]["Enums"]["issue_severity"];
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          field?: string | null;
+          id?: string;
+          message?: string;
+          org_id?: string;
+          record_id?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          severity?: Database["public"]["Enums"]["issue_severity"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "validation_issues_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "validation_issues_record_id_fkey";
+            columns: ["record_id"];
+            isOneToOne: false;
+            referencedRelation: "records";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "validation_issues_resolved_by_fkey";
+            columns: ["resolved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string };
+      bulk_approve_clean: { Args: { p_records: string[] }; Returns: number };
       confirm_document_upload: {
         Args: { p_document: string };
         Returns: {
@@ -702,6 +833,7 @@ export type Database = {
       create_organization: {
         Args: { p_entity_kind: Database["public"]["Enums"]["entity_kind"]; p_name: string };
         Returns: {
+          auto_approve: boolean;
           brand_color: string | null;
           created_at: string;
           created_by: string | null;
@@ -733,6 +865,14 @@ export type Database = {
         }[];
       };
       is_org_member: { Args: { p_org: string }; Returns: boolean };
+      record_min_confidence: {
+        Args: { p_document_type: Database["public"]["Enums"]["document_type"]; p_field_confidence: Json };
+        Returns: number;
+      };
+      replace_record_issues: {
+        Args: { p_issues: Json; p_org: string; p_record: string };
+        Returns: undefined;
+      };
       retry_document: {
         Args: { p_document: string };
         Returns: {
@@ -755,6 +895,49 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      review_record: {
+        Args: {
+          p_action: Database["public"]["Enums"]["review_action_type"];
+          p_fields?: Json;
+          p_issues?: Json;
+          p_lines?: Json;
+          p_reason?: string;
+          p_record: string;
+        };
+        Returns: {
+          approved_at: string | null;
+          approved_by: string | null;
+          category: Database["public"]["Enums"]["cost_category"] | null;
+          created_at: string;
+          currency: string | null;
+          document_id: string | null;
+          document_type: Database["public"]["Enums"]["document_type"] | null;
+          due_date: string | null;
+          entity_hint: string | null;
+          entity_id: string | null;
+          extraction_id: string | null;
+          field_confidence: NonNullable<Json>;
+          id: string;
+          invoice_number: string | null;
+          issue_date: string | null;
+          min_confidence: number;
+          org_id: string;
+          status: Database["public"]["Enums"]["record_status"];
+          subtotal_cents: number | null;
+          supplier_name: string | null;
+          supplier_tax_id: string | null;
+          tax_cents: number | null;
+          tax_rate: number | null;
+          total_cents: number | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "records";
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -800,6 +983,39 @@ export type Database = {
           p_lines: Json;
           p_org: string;
           p_record: Json;
+        };
+        Returns: {
+          attempts: number;
+          created_at: string;
+          entity_id: string | null;
+          error: string | null;
+          file_name: string;
+          id: string;
+          mime_type: string;
+          org_id: string;
+          page_count: number | null;
+          sha256: string | null;
+          size_bytes: number;
+          status: Database["public"]["Enums"]["document_status"];
+          storage_path: string;
+          updated_at: string;
+          uploaded_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      save_validation: {
+        Args: {
+          p_actor?: string;
+          p_document: string;
+          p_document_status: Database["public"]["Enums"]["document_status"];
+          p_issues: Json;
+          p_org: string;
+          p_record_status: Database["public"]["Enums"]["record_status"];
         };
         Returns: {
           attempts: number;
@@ -891,9 +1107,11 @@ export type Database = {
       document_type: "invoice" | "receipt" | "credit_note" | "quote" | "statement" | "other";
       entity_kind: "property" | "job";
       entity_status: "active" | "archived";
+      issue_severity: "error" | "warning";
       org_role: "owner" | "admin" | "reviewer" | "member" | "viewer";
       page_source: "text_layer" | "ocr";
       record_status: "needs_review" | "approved" | "rejected";
+      review_action_type: "approve" | "reject" | "correct" | "reopen";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1036,9 +1254,11 @@ export const Constants = {
       document_type: ["invoice", "receipt", "credit_note", "quote", "statement", "other"],
       entity_kind: ["property", "job"],
       entity_status: ["active", "archived"],
+      issue_severity: ["error", "warning"],
       org_role: ["owner", "admin", "reviewer", "member", "viewer"],
       page_source: ["text_layer", "ocr"],
       record_status: ["needs_review", "approved", "rejected"],
+      review_action_type: ["approve", "reject", "correct", "reopen"],
     },
   },
 } as const;
