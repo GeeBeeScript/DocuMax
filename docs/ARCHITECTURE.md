@@ -26,7 +26,7 @@
 | Live status   | Supabase Realtime on `documents` (RLS-filtered)                             |
 | AI            | Vercel AI SDK, provider set by `AI_PROVIDER`/`AI_MODEL` (`lib/ai/provider`) |
 | PDF           | HTML templates → Playwright Chromium `page.pdf()` in the worker             |
-| Payments      | Stripe Checkout + Customer Portal + webhook                                 |
+| Payments      | Stripe Checkout + Customer Portal + signed webhook (`/api/stripe/webhook`)  |
 
 No separate Node API server: Next.js covers request/response work; the worker covers everything long-running
 (see ADR-002).
@@ -72,8 +72,10 @@ Details: [DOCUMENT_PIPELINE.md](DOCUMENT_PIPELINE.md).
 
 Implemented in Phase 3 as: `requestUpload` (zod-validated metadata, sha256 duplicate hint, signed upload URL created
 with the **user's** client so storage policies apply, then the `uploading` row) → browser `PUT` with progress (3 at a
-time) → `confirmUpload` (checks the stored object's size, `confirm_document_upload()`, `enqueue`). The usage-cap
-check shown above arrives with billing (Phase 10).
+time) → `confirmUpload` (checks the stored object's size, `confirm_document_upload()`, `enqueue`). Since Phase 10
+the `uploading` row is created by `create_document_upload()`, which counts the document against the month's cap in
+the same transaction (`quota_exceeded` → nothing is created); a browser upload that fails calls
+`cancel_document_upload()`, which removes the pending row and gives the quota back.
 
 ## Queues
 

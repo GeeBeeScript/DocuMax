@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { orgOfOwner, setPlan } from "./support/admin";
 
 /** Needs local Supabase running (npx supabase start) and its keys in .env.local. */
 
@@ -39,11 +40,14 @@ test.describe("auth & onboarding", () => {
 
   test("an invited teammate signs up and joins with the invited role", async ({ page, browser }) => {
     const mate = unique("mate");
+    const ownerEmail = unique("owner");
     await page.goto("/signup");
-    await signUp(page, "Olive Owner", unique("owner"));
+    await signUp(page, "Olive Owner", ownerEmail);
     await page.getByLabel("Organization name").fill("Keystone Homes");
     await page.getByText("Properties", { exact: true }).click();
     await page.getByRole("button", { name: "Create organization" }).click();
+    await expect(page).toHaveURL(/\/onboarding\/invite$/);
+    await setPlan(await orgOfOwner(ownerEmail), "pro"); // Free has one seat (Phase 10)
     await page.getByLabel("Email").fill(mate);
     await page.getByLabel("Role").selectOption("reviewer");
     await page.getByRole("button", { name: "Create invite link" }).click();
