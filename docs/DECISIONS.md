@@ -101,7 +101,10 @@ acceptance criterion "mixed PDFs OCR only sparse pages" (a 1-in-4 scanned page w
 page is OCR'd and text-layer pages never are. Preprocessing was chosen by measurement on the fixtures: `normalize()`
 stretched JPEG noise on mostly-white scans into stripes (0/7 key strings); Otsu binarization of plain grayscale
 found 7/7 on every scanned page and 8/8 on the phone photo. Deskew is not applied: the fixtures are tilted ~1° and
-Tesseract handles that; revisit with real customer scans. Note Tesseract's own confidence can be high on garbage
+Tesseract handles that; revisit with real customer scans. **Update (2026-11-14):** page segmentation is
+`SINGLE_BLOCK` (PSM 6), not automatic layout — on a small receipt, automatic layout silently dropped the TOTAL line
+while reporting _higher_ confidence (93 vs 87); PSM 6 kept every line on every fixture and reads table rows left to
+right. Found by the extraction eval, now a slow-test regression case. Note Tesseract's own confidence can be high on garbage
 (95 with 0/7 key strings), so OCR quality is tested on content, not confidence.
 
 ## ADR-014 — HEIC/HEIF decoded with libheif-in-WASM (`heic-decode`)

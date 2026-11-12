@@ -65,6 +65,24 @@ describe("stage 1 on fixtures", () => {
     for (const page of result.pages) expect(page.text).toContain("INV-5120");
   }, 60_000);
 
+  it("small screenshot receipt keeps its TOTAL line (regression: automatic layout dropped it)", async () => {
+    const result = await extractDocumentText(await fixture("images/sample-receipt.png"), "image/png", {
+      ocr,
+    });
+    for (const key of ["HARDWARE DEPOT", "88213", "18.40", "6.10", "TOTAL", "24.50"])
+      expect(result.pages[0].text).toContain(key);
+  }, 60_000);
+
+  it("scanned European invoice: amounts and dates as printed", async () => {
+    const result = await extractDocumentText(
+      await fixture("pdf/euro-invoice-scanned.pdf"),
+      "application/pdf",
+      { ocr },
+    );
+    for (const key of ["Haustechnik Weber GmbH", "RE-2026-0815", "14.10.2026", "1.234,63"])
+      expect(result.pages[0].text).toContain(key);
+  }, 60_000);
+
   it("phone photo receipt (sideways, EXIF-rotated): OCR'd upright", async () => {
     const result = await extractDocumentText(await fixture("images/photo-receipt.jpg"), "image/jpeg", {
       ocr,

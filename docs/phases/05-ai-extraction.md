@@ -46,9 +46,7 @@ environment (none is configured yet).
 - [x] **Model output never feeds arithmetic** — amounts are strings parsed by `lib/calc` (tests).
 - [x] Tests: schema on recorded outputs (valid / partially null / invalid / malformed → retry), `map-extraction`
       unit tests, mocked AI in CI (unit 255, integration 249), E2E with the dev model (13).
-- [ ] **≥ 90% of fixtures correct** — `scripts/eval-extraction.ts` + 9 labeled fixtures are ready; harness verified
-      with the dev model (5/9 — expected for a regex stand-in, not a quality measure). Run with a real key:
-      `npm run eval:extraction`.
+- [~] **≥ 90% of fixtures correct** — met with an open model, not yet with the configured default (see below).
 
 ## To finish
 
@@ -56,3 +54,16 @@ environment (none is configured yet).
    `api.anthropic.com`, header `x-api-key`), or `ANTHROPIC_API_KEY` in `.env.local` locally.
 2. `npm run eval:extraction` (≈ 9 model calls). If < 90%, iterate on `lib/ai/prompt.ts` against the eval.
 3. Record the result here and mark the phase done.
+
+## Eval results
+
+| Date       | Model (provider)                                       | Result         | Notes                                                                                                                                                           |
+| ---------- | ------------------------------------------------------ | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-14 | heuristic dev model (`mock`)                           | 5/9 (56%)      | harness check only; not a quality measure                                                                                                                       |
+| 2026-11-14 | `nvidia/nemotron-3.5-super-vl:free` (OpenRouter, open) | 8/9 (89%)      | miss was an **OCR bug**: automatic page layout dropped a receipt's TOTAL line; the model correctly returned null instead of adding up the lines → fixed (PSM 6) |
+| 2026-11-14 | same, after the OCR fix                                | 8/9 (89%)      | utility bill "Statement date" not read as the issue date (varied between runs) → prompt now names common date labels                                            |
+| 2026-11-14 | same, after the prompt change                          | **9/9 (100%)** | ≈ 1K input + 4K output tokens and 16–98 s per document on the free endpoint                                                                                     |
+
+`anthropic/claude-sonnet-5.5` (the configured default, ADR-003) has not run yet: the OpenRouter account needs
+credits. The phase is marked done once the model chosen as default passes. One 9-fixture run is a small sample (the
+open model's results varied between runs); re-run before relying on a single score.
