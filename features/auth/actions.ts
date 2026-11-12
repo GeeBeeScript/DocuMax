@@ -1,5 +1,7 @@
 "use server";
 
+import { RATE_LIMITED } from "@/lib/security/rate-limit";
+import { allow } from "@/lib/security/rate-limit.server";
 import { redirect } from "next/navigation";
 import { fail, invalid, ok, type ActionResult } from "@/lib/actions/result";
 import { clientEnv } from "@/lib/env";
@@ -15,6 +17,7 @@ function confirmUrl(next: string) {
 }
 
 export async function logIn(input: unknown): Promise<ActionResult> {
+  if (!(await allow("auth"))) return fail(RATE_LIMITED);
   const parsed = LogInSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
 
@@ -29,6 +32,7 @@ export async function logIn(input: unknown): Promise<ActionResult> {
 
 /** Signs up; with email confirmation off the user is signed in and continues to onboarding (or `next`). */
 export async function signUp(input: unknown): Promise<ActionResult<{ confirmEmail: true }>> {
+  if (!(await allow("auth"))) return fail(RATE_LIMITED);
   const parsed = SignUpSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
 
@@ -47,6 +51,7 @@ export async function signUp(input: unknown): Promise<ActionResult<{ confirmEmai
 }
 
 export async function sendMagicLink(input: unknown): Promise<ActionResult> {
+  if (!(await allow("auth"))) return fail(RATE_LIMITED);
   const parsed = MagicLinkSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
 

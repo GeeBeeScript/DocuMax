@@ -1,5 +1,7 @@
 "use server";
 
+import { RATE_LIMITED } from "@/lib/security/rate-limit";
+import { allow } from "@/lib/security/rate-limit.server";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { fail, failCode, invalid, ok, type ActionResult } from "@/lib/actions/result";
@@ -32,6 +34,7 @@ export async function requestUpload(input: unknown): Promise<ActionResult<Upload
   if (!parsed.success) return invalid(parsed.error, parsed.error.issues[0]?.message);
   const ctx = await requireActiveOrg();
   if (!canWrite(ctx.role)) return fail(FORBIDDEN);
+  if (!(await allow("upload", ctx.userId))) return fail(RATE_LIMITED);
 
   const supabase = await createSupabaseServerClient();
   const { fileName, mimeType, sizeBytes, sha256, entityId } = parsed.data;

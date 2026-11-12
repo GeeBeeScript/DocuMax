@@ -1,5 +1,7 @@
 "use server";
 
+import { RATE_LIMITED } from "@/lib/security/rate-limit";
+import { allow } from "@/lib/security/rate-limit.server";
 import { revalidatePath } from "next/cache";
 import { fail, invalid, ok, type ActionResult } from "@/lib/actions/result";
 import { canReview, ForbiddenError } from "@/lib/auth/roles";
@@ -47,6 +49,7 @@ export async function generateStatement(input: unknown): Promise<ActionResult<{ 
   if (!parsed.success) return invalid(parsed.error, parsed.error.issues[0]?.message);
   const ctx = await requireActiveOrg();
   if (!canReview(ctx.role)) return fail(FORBIDDEN);
+  if (!(await allow("report", ctx.userId))) return fail(RATE_LIMITED);
   const { entityId, period } = parsed.data;
   const name = await entityName(ctx.org.id, entityId);
   if (!name) return fail("Not found.");
@@ -72,6 +75,7 @@ export async function generateSummary(input: unknown): Promise<ActionResult<{ id
   if (!parsed.success) return invalid(parsed.error, parsed.error.issues[0]?.message);
   const ctx = await requireActiveOrg();
   if (!canReview(ctx.role)) return fail(FORBIDDEN);
+  if (!(await allow("report", ctx.userId))) return fail(RATE_LIMITED);
   const { period } = parsed.data;
 
   const supabase = await createSupabaseServerClient();
@@ -95,6 +99,7 @@ export async function generateQuote(input: unknown): Promise<ActionResult<{ id: 
   if (!parsed.success) return invalid(parsed.error, parsed.error.issues[0]?.message);
   const ctx = await requireActiveOrg();
   if (!canReview(ctx.role)) return fail(FORBIDDEN);
+  if (!(await allow("report", ctx.userId))) return fail(RATE_LIMITED);
   const { entityId, period, markupBp, taxRateBp, validDays, notes } = parsed.data;
   const name = await entityName(ctx.org.id, entityId);
   if (!name) return fail("Not found.");
@@ -129,6 +134,7 @@ export async function generateStatementBatch(
   if (!parsed.success) return invalid(parsed.error, parsed.error.issues[0]?.message);
   const ctx = await requireActiveOrg();
   if (!canReview(ctx.role)) return fail(FORBIDDEN);
+  if (!(await allow("report", ctx.userId))) return fail(RATE_LIMITED);
   const { period } = parsed.data;
 
   const supabase = await createSupabaseServerClient();

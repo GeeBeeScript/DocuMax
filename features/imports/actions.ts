@@ -1,5 +1,7 @@
 "use server";
 
+import { RATE_LIMITED } from "@/lib/security/rate-limit";
+import { allow } from "@/lib/security/rate-limit.server";
 import { revalidatePath } from "next/cache";
 import { fail, invalid, ok, type ActionResult } from "@/lib/actions/result";
 import { canReview, canWrite, ForbiddenError } from "@/lib/auth/roles";
@@ -34,6 +36,7 @@ export async function createImport(input: unknown): Promise<ActionResult<ImportP
   if (!parsed.success) return invalid(parsed.error, "Upload a CSV file.");
   const ctx = await requireActiveOrg();
   if (!canWrite(ctx.role)) return fail(FORBIDDEN);
+  if (!(await allow("import", ctx.userId))) return fail(RATE_LIMITED);
   const { storagePath, fileName } = parsed.data;
   if (!storagePath.startsWith(`${ctx.org.id}/`)) return fail(FORBIDDEN);
 
