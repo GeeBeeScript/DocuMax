@@ -28,6 +28,11 @@ const serverSchema = clientSchema.extend({
   OPENROUTER_API_KEY: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  /** Stripe price ids per plan and interval (lib/billing/stripe.ts). Unset = that plan can't be bought yet. */
+  STRIPE_PRICE_PRO_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_PRO_YEARLY: z.string().optional(),
+  STRIPE_PRICE_BUSINESS_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_BUSINESS_YEARLY: z.string().optional(),
 });
 
 export type ClientEnv = z.infer<typeof clientSchema>;

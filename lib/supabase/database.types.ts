@@ -668,6 +668,25 @@ export type Database = {
         };
         Relationships: [];
       };
+      plan_limits: {
+        Row: {
+          documents_per_month: number | null;
+          plan: string;
+          seats: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          documents_per_month?: number | null;
+          plan: string;
+          seats?: number | null;
+        };
+        Update: {
+          documents_per_month?: number | null;
+          plan?: string;
+          seats?: number | null;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           avatar_path: string | null;
@@ -1063,6 +1082,125 @@ export type Database = {
           },
         ];
       };
+      stripe_events: {
+        Row: {
+          id: string;
+          received_at: string;
+          type: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          id: string;
+          received_at?: string;
+          type: string;
+        };
+        Update: {
+          id?: string;
+          received_at?: string;
+          type?: string;
+        };
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          billing_interval: string | null;
+          cancel_at_period_end: boolean;
+          created_at: string;
+          current_period_end: string | null;
+          current_period_start: string | null;
+          id: string;
+          last_event_at: string | null;
+          org_id: string;
+          payment_failed_at: string | null;
+          plan: string;
+          status: string;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          billing_interval?: string | null;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
+          id?: string;
+          last_event_at?: string | null;
+          org_id: string;
+          payment_failed_at?: string | null;
+          plan?: string;
+          status?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          billing_interval?: string | null;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
+          id?: string;
+          last_event_at?: string | null;
+          org_id?: string;
+          payment_failed_at?: string | null;
+          plan?: string;
+          status?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscriptions_plan_fkey";
+            columns: ["plan"];
+            isOneToOne: false;
+            referencedRelation: "plan_limits";
+            referencedColumns: ["plan"];
+          },
+        ];
+      };
+      usage_counters: {
+        Row: {
+          documents_used: number;
+          id: string;
+          org_id: string;
+          period_start: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          documents_used?: number;
+          id?: string;
+          org_id: string;
+          period_start: string;
+          updated_at?: string;
+        };
+        Update: {
+          documents_used?: number;
+          id?: string;
+          org_id?: string;
+          period_start?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "usage_counters_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       validation_issues: {
         Row: {
           code: string;
@@ -1135,6 +1273,7 @@ export type Database = {
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string };
       bulk_approve_clean: { Args: { p_records: string[] }; Returns: number };
+      cancel_document_upload: { Args: { p_document: string }; Returns: boolean };
       confirm_document_upload: {
         Args: { p_document: string };
         Returns: {
@@ -1160,6 +1299,20 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      consume_document_quota: { Args: { p_count?: number; p_org: string }; Returns: number };
+      create_document_upload: {
+        Args: {
+          p_entity: string;
+          p_file_name: string;
+          p_id: string;
+          p_mime_type: string;
+          p_org: string;
+          p_sha256: string;
+          p_size_bytes: number;
+          p_storage_path: string;
+        };
+        Returns: undefined;
       };
       create_organization: {
         Args: { p_entity_kind: Database["public"]["Enums"]["entity_kind"]; p_name: string };
@@ -1270,9 +1423,26 @@ export type Database = {
       };
       is_org_member: { Args: { p_org: string }; Returns: boolean };
       next_quote_number: { Args: { p_org: string }; Returns: string };
+      org_plan: { Args: { p_org: string }; Returns: string };
+      org_usage: {
+        Args: { p_org: string };
+        Returns: {
+          documents_cap: number;
+          documents_used: number;
+          period_start: string;
+          plan: string;
+          seats_cap: number;
+          seats_used: number;
+        }[];
+      };
+      org_usage_period: { Args: { p_org: string }; Returns: string };
       record_min_confidence: {
         Args: { p_document_type: Database["public"]["Enums"]["document_type"]; p_field_confidence: Json };
         Returns: number;
+      };
+      release_document_quota: {
+        Args: { p_count?: number; p_org: string; p_period?: string };
+        Returns: undefined;
       };
       replace_record_issues: {
         Args: { p_issues: Json; p_org: string; p_record: string };
@@ -1458,6 +1628,7 @@ export type Database = {
         };
         Returns: number;
       };
+      set_stripe_customer: { Args: { p_customer: string; p_org: string }; Returns: undefined };
       shares_org_with: { Args: { p_user: string }; Returns: boolean };
       slugify: { Args: { p_text: string }; Returns: string };
       start_import: {

@@ -2,9 +2,10 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { fail, invalid, ok, type ActionResult } from "@/lib/actions/result";
+import { fail, failCode, invalid, ok, type ActionResult } from "@/lib/actions/result";
 import { canWrite, ForbiddenError } from "@/lib/auth/roles";
 import { requireActiveOrg } from "@/lib/auth/session";
+import { billingCopy } from "@/content/app";
 import { storageFileName } from "@/lib/documents/upload-rules";
 import { enqueue, QUEUES } from "@/lib/queue";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -55,21 +56,33 @@ export async function requestUpload(input: unknown): Promise<ActionResult<Upload
   const signed = await supabase.storage.from(BUCKET).createSignedUploadUrl(storagePath);
   if (signed.error) return fail("Couldn't prepare the upload. Please try again.");
 
-  const { error } = await supabase.from("documents").insert({
-    id: documentId,
-    org_id: ctx.org.id,
-    uploaded_by: ctx.userId,
-    entity_id: entityId ?? null,
-    storage_path: storagePath,
-    file_name: fileName,
-    mime_type: mimeType,
-    size_bytes: sizeBytes,
-    sha256: sha256 ?? null,
+  // Counts against the monthly cap and creates the pending row in one transaction (docs/DATA_MODEL.md → Billing).
+  const { error } = await supabase.rpc("create_document_upload", {
+    p_org: ctx.org.id,
+    p_id: documentId,
+    p_storage_path: storagePath,
+    p_file_name: fileName,
+    p_mime_type: mimeType,
+    p_size_bytes: sizeBytes,
+    p_sha256: sha256 ?? (null as unknown as string),
+    p_entity: entityId ?? (null as unknown as string),
   });
   if (error) {
+    if (error.message === "quota_exceeded") return failCode("quota_exceeded", billingCopy.quotaExceeded);
     return fail(error.code === "42501" ? FORBIDDEN : "Couldn't prepare the upload. Please try again.");
   }
   return ok({ documentId, uploadUrl: signed.data.signedUrl, duplicateOf });
+}
+
+/** The browser couldn't finish uploading: drop the pending document and give its quota back. */
+export async function cancelUpload(input: unknown): Promise<ActionResult> {
+  const parsed = DocumentIdSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  await requireActiveOrg();
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("cancel_document_upload", { p_document: parsed.data.documentId });
+  if (error) return fail("Something went wrong. Please try again.");
+  return ok();
 }
 
 async function startProcessing(orgId: string, documentId: string, attempts: number) {
