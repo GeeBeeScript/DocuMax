@@ -111,3 +111,23 @@ Prebuilt sharp/libvips ships without the HEVC decoder (patent licensing), so it 
 `heic-decode` (libheif compiled to WASM) decodes to RGBA, which sharp then handles. No native build step or system
 libheif needed in the worker image. No HEIC fixture yet (none can be produced here without an HEVC encoder): the
 path is unit-tested with a mocked decoder — add a real iPhone photo fixture when one is available.
+
+## ADR-015 — Extraction: no sampling params, two-layer schema, refusal fallbacks
+
+**Status:** Accepted (2026-11-14)
+DOCUMENT_PIPELINE.md asked for temperature 0. Current Claude models reject sampling parameters (`temperature`,
+`top_p`, `top_k`), and they reject forced tool use, so we send neither: the AI SDK uses the provider's native
+structured output and the schema constrains the answer. The model fills a plain-typed `ModelExtraction`; strict
+rules (ISO dates, currency codes, confidence range) are enforced afterwards by `InvoiceExtraction`, with retries
+that feed the validation errors back. **Why:** a schema with formats/ranges can be rejected by a provider's
+structured-output mode, and validating ourselves gives one behavior across providers (ADR-003). Anthropic requests
+opt into server-side refusal fallbacks (`fallbacks: "default"`) so a declined request is re-run on a suitable model
+inside the same call; a refusal that survives the fallback fails the document with a clear message.
+
+## ADR-016 — Deterministic dev model (`AI_PROVIDER=mock`)
+
+**Status:** Accepted (2026-11-14)
+Local development and E2E run the full pipeline without an API key using a regex-based model built on the AI SDK's
+mock class. It never claims more than 0.6 confidence (so its output always goes to review) and `extractionModel()`
+refuses it when `NODE_ENV=production`. It is not a quality baseline: accuracy is measured only with real models via
+`npm run eval:extraction`.

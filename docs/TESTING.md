@@ -54,3 +54,12 @@ Both need local Supabase: `npx supabase start`, then put the URL, anon key and s
 synthetic content: digital, scanned 3-page, mixed, phone photo (sideways, EXIF orientation 6), corrupt and
 password-protected PDFs. `PW_CHROMIUM=/path/to/chrome` points it at a preinstalled browser. Slow OCR tests assert
 key strings per fixture and the < 30 s budget for the 3-page scan.
+
+## AI extraction
+
+- CI never calls a model: unit tests use recorded outputs (`tests/fixtures/ai/*.json`) through
+  `tests/support/mock-ai.ts` (`replayModel`), covering valid, partially-null, invalid-field and malformed outputs,
+  the retry path, refusals and transport errors.
+- E2E runs the worker with `AI_PROVIDER=mock` (deterministic dev model).
+- Accuracy: `npm run eval:extraction` (real provider; manual / nightly). Add a fixture by generating the document
+  in `tests/fixtures/generate.mjs` and its expected required fields in `tests/fixtures/labels/extraction.json`.
