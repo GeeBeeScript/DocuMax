@@ -1,7 +1,8 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
-import type { LanguageModel } from "ai";
+import type { generateText, LanguageModel } from "ai";
 import { serverEnv } from "@/lib/env";
+import { createDevExtractionModel } from "./dev-model";
 
 /**
  * Provider-agnostic model selection (ADR-003). The rest of the codebase calls `extractionModel()` and
@@ -23,13 +24,21 @@ export function extractionModel(): LanguageModel {
       if (!env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is required for AI_PROVIDER=openai");
       return createOpenAI({ apiKey: env.OPENAI_API_KEY })(env.AI_MODEL);
     }
+    case "mock":
+      // Checked here, not in env validation: the web app also runs with NODE_ENV=production and never uses AI.
+      if (process.env.NODE_ENV === "production")
+        throw new Error("AI_PROVIDER=mock is for development and tests only");
+      return createDevExtractionModel();
   }
 }
 
 /** Provider + model as configured (stored with every extraction for cost/accuracy comparisons). */
 export function extractionModelInfo(): { provider: string; model: string } {
   const env = serverEnv();
-  return { provider: env.AI_PROVIDER, model: env.AI_MODEL };
+  return {
+    provider: env.AI_PROVIDER,
+    model: env.AI_PROVIDER === "mock" ? "heuristic-dev-model" : env.AI_MODEL,
+  };
 }
 
 /**
@@ -38,7 +47,7 @@ export function extractionModelInfo(): { provider: string; model: string } {
  * temperature are deliberately not sent: current Claude models reject them, and extraction is constrained by the
  * output schema rather than by sampling.
  */
-export function extractionProviderOptions() {
+export function extractionProviderOptions(): Parameters<typeof generateText>[0]["providerOptions"] {
   const env = serverEnv();
   if (env.AI_PROVIDER === "anthropic") {
     return { anthropic: { fallbacks: "default" as const, ...(env.AI_EFFORT && { effort: env.AI_EFFORT }) } };

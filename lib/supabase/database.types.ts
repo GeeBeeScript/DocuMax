@@ -248,6 +248,70 @@ export type Database = {
           },
         ];
       };
+      extractions: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          document_id: string;
+          fields: NonNullable<Json>;
+          id: string;
+          latency_ms: number;
+          model: string;
+          org_id: string;
+          provider: string;
+          raw: NonNullable<Json>;
+          schema_version: number;
+          tokens_in: number;
+          tokens_out: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts: number;
+          created_at?: string;
+          document_id: string;
+          fields: NonNullable<Json>;
+          id?: string;
+          latency_ms: number;
+          model: string;
+          org_id: string;
+          provider: string;
+          raw: NonNullable<Json>;
+          schema_version: number;
+          tokens_in?: number;
+          tokens_out?: number;
+        };
+        Update: {
+          attempts?: number;
+          created_at?: string;
+          document_id?: string;
+          fields?: NonNullable<Json>;
+          id?: string;
+          latency_ms?: number;
+          model?: string;
+          org_id?: string;
+          provider?: string;
+          raw?: NonNullable<Json>;
+          schema_version?: number;
+          tokens_in?: number;
+          tokens_out?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "extractions_document_id_fkey";
+            columns: ["document_id"];
+            isOneToOne: false;
+            referencedRelation: "documents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "extractions_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       invites: {
         Row: {
           accepted_at: string | null;
@@ -292,6 +356,67 @@ export type Database = {
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      line_items: {
+        Row: {
+          amount_cents: number | null;
+          category: Database["public"]["Enums"]["cost_category"] | null;
+          confidence: number;
+          created_at: string;
+          description: string | null;
+          id: string;
+          org_id: string;
+          position: number;
+          quantity: number | null;
+          record_id: string;
+          unit_price_cents: number | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_cents?: number | null;
+          category?: Database["public"]["Enums"]["cost_category"] | null;
+          confidence: number;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          org_id: string;
+          position: number;
+          quantity?: number | null;
+          record_id: string;
+          unit_price_cents?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          amount_cents?: number | null;
+          category?: Database["public"]["Enums"]["cost_category"] | null;
+          confidence?: number;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          org_id?: string;
+          position?: number;
+          quantity?: number | null;
+          record_id?: string;
+          unit_price_cents?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "line_items_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "line_items_record_id_fkey";
+            columns: ["record_id"];
+            isOneToOne: false;
+            referencedRelation: "records";
             referencedColumns: ["id"];
           },
         ];
@@ -415,6 +540,127 @@ export type Database = {
           {
             foreignKeyName: "profiles_last_org_id_fkey";
             columns: ["last_org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      records: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          category: Database["public"]["Enums"]["cost_category"] | null;
+          created_at: string;
+          currency: string | null;
+          document_id: string | null;
+          document_type: Database["public"]["Enums"]["document_type"] | null;
+          due_date: string | null;
+          entity_hint: string | null;
+          entity_id: string | null;
+          extraction_id: string | null;
+          field_confidence: NonNullable<Json>;
+          id: string;
+          invoice_number: string | null;
+          issue_date: string | null;
+          min_confidence: number;
+          org_id: string;
+          status: Database["public"]["Enums"]["record_status"];
+          subtotal_cents: number | null;
+          supplier_name: string | null;
+          supplier_tax_id: string | null;
+          tax_cents: number | null;
+          tax_rate: number | null;
+          total_cents: number | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          category?: Database["public"]["Enums"]["cost_category"] | null;
+          created_at?: string;
+          currency?: string | null;
+          document_id?: string | null;
+          document_type?: Database["public"]["Enums"]["document_type"] | null;
+          due_date?: string | null;
+          entity_hint?: string | null;
+          entity_id?: string | null;
+          extraction_id?: string | null;
+          field_confidence?: NonNullable<Json>;
+          id?: string;
+          invoice_number?: string | null;
+          issue_date?: string | null;
+          min_confidence: number;
+          org_id: string;
+          status?: Database["public"]["Enums"]["record_status"];
+          subtotal_cents?: number | null;
+          supplier_name?: string | null;
+          supplier_tax_id?: string | null;
+          tax_cents?: number | null;
+          tax_rate?: number | null;
+          total_cents?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          category?: Database["public"]["Enums"]["cost_category"] | null;
+          created_at?: string;
+          currency?: string | null;
+          document_id?: string | null;
+          document_type?: Database["public"]["Enums"]["document_type"] | null;
+          due_date?: string | null;
+          entity_hint?: string | null;
+          entity_id?: string | null;
+          extraction_id?: string | null;
+          field_confidence?: NonNullable<Json>;
+          id?: string;
+          invoice_number?: string | null;
+          issue_date?: string | null;
+          min_confidence?: number;
+          org_id?: string;
+          status?: Database["public"]["Enums"]["record_status"];
+          subtotal_cents?: number | null;
+          supplier_name?: string | null;
+          supplier_tax_id?: string | null;
+          tax_cents?: number | null;
+          tax_rate?: number | null;
+          total_cents?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "records_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "records_document_id_fkey";
+            columns: ["document_id"];
+            isOneToOne: true;
+            referencedRelation: "documents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "records_entity_id_fkey";
+            columns: ["entity_id"];
+            isOneToOne: false;
+            referencedRelation: "entities";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "records_extraction_id_fkey";
+            columns: ["extraction_id"];
+            isOneToOne: false;
+            referencedRelation: "extractions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "records_org_id_fkey";
+            columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
             referencedColumns: ["id"];
@@ -546,6 +792,39 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      save_extraction: {
+        Args: {
+          p_actor?: string;
+          p_document: string;
+          p_extraction: Json;
+          p_lines: Json;
+          p_org: string;
+          p_record: Json;
+        };
+        Returns: {
+          attempts: number;
+          created_at: string;
+          entity_id: string | null;
+          error: string | null;
+          file_name: string;
+          id: string;
+          mime_type: string;
+          org_id: string;
+          page_count: number | null;
+          sha256: string | null;
+          size_bytes: number;
+          status: Database["public"]["Enums"]["document_status"];
+          storage_path: string;
+          updated_at: string;
+          uploaded_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       shares_org_with: { Args: { p_user: string }; Returns: boolean };
       slugify: { Args: { p_text: string }; Returns: string };
       storage_org_id: { Args: { p_name: string }; Returns: string };
@@ -586,6 +865,20 @@ export type Database = {
     };
     Enums: {
       audit_action: "insert" | "update" | "delete";
+      cost_category:
+        | "repairs_maintenance"
+        | "materials"
+        | "labor_subcontract"
+        | "utilities"
+        | "cleaning"
+        | "landscaping"
+        | "insurance"
+        | "taxes_fees"
+        | "professional_services"
+        | "equipment_rental"
+        | "travel_fuel"
+        | "office_admin"
+        | "other";
       document_status:
         | "uploading"
         | "queued"
@@ -595,10 +888,12 @@ export type Database = {
         | "needs_review"
         | "ready"
         | "failed";
+      document_type: "invoice" | "receipt" | "credit_note" | "quote" | "statement" | "other";
       entity_kind: "property" | "job";
       entity_status: "active" | "archived";
       org_role: "owner" | "admin" | "reviewer" | "member" | "viewer";
       page_source: "text_layer" | "ocr";
+      record_status: "needs_review" | "approved" | "rejected";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -713,6 +1008,21 @@ export const Constants = {
   public: {
     Enums: {
       audit_action: ["insert", "update", "delete"],
+      cost_category: [
+        "repairs_maintenance",
+        "materials",
+        "labor_subcontract",
+        "utilities",
+        "cleaning",
+        "landscaping",
+        "insurance",
+        "taxes_fees",
+        "professional_services",
+        "equipment_rental",
+        "travel_fuel",
+        "office_admin",
+        "other",
+      ],
       document_status: [
         "uploading",
         "queued",
@@ -723,10 +1033,12 @@ export const Constants = {
         "ready",
         "failed",
       ],
+      document_type: ["invoice", "receipt", "credit_note", "quote", "statement", "other"],
       entity_kind: ["property", "job"],
       entity_status: ["active", "archived"],
       org_role: ["owner", "admin", "reviewer", "member", "viewer"],
       page_source: ["text_layer", "ocr"],
+      record_status: ["needs_review", "approved", "rejected"],
     },
   },
 } as const;

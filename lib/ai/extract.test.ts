@@ -1,41 +1,19 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { MockLanguageModelV4 } from "ai/test";
+import { recordedOutput, replayModel } from "@/tests/support/mock-ai";
 import { ExtractionError, extractInvoice, normalizeModelOutput } from "./extract";
 import { InvoiceExtraction, ModelExtraction } from "./extraction-schema";
 import { buildUserMessage, EXTRACTION_SYSTEM_PROMPT } from "./prompt";
 
-const recorded = (name: string) => readFileSync(path.join(process.cwd(), "tests/fixtures/ai", name), "utf8");
+const recorded = recordedOutput;
 const pages = [{ pageNo: 1, text: "Brightline Plumbing Co. Invoice INV-2041 Total due 1260.57" }];
 const context = {
   entityKind: "property" as const,
   entities: [{ name: "12 Elm Street", code: "ELM-12", address: null }],
 };
 
-type Reply = { text: string; finish?: "stop" | "content-filter" };
-/** A mock model that answers each call with the next reply; records the prompts it saw. */
-function mockModel(replies: Reply[]) {
-  let call = 0;
-  return new MockLanguageModelV4({
-    doGenerate: async () => {
-      const reply = replies[Math.min(call++, replies.length - 1)];
-      return {
-        content: [{ type: "text", text: reply.text }],
-        finishReason: {
-          unified: reply.finish ?? "stop",
-          raw: reply.finish === "content-filter" ? "refusal" : "end_turn",
-        },
-        usage: {
-          inputTokens: { total: 1200, noCache: 1200, cacheRead: 0, cacheWrite: 0 },
-          outputTokens: { total: 300, text: 300, reasoning: 0 },
-        },
-        warnings: [],
-      };
-    },
-  });
-}
+const mockModel = replayModel;
 const promptText = (model: MockLanguageModelV4, i: number) => JSON.stringify(model.doGenerateCalls[i].prompt);
 
 describe("recorded outputs", () => {

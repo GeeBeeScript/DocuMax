@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { OrgScopeError } from "@/lib/db/org-scope";
 import { createTesseractEngine, type OcrEngine } from "@/lib/pipeline/ocr";
 import { markDocumentFailed, processDocument, WORKER_ACTOR_ID } from "@/worker/processors/process-document";
+import { recordedOutput, replayModel } from "@/tests/support/mock-ai";
 import { adminClient, cleanup, createOrg, createUser, type TestUser } from "../helpers";
 
 const db = adminClient();
@@ -13,7 +14,17 @@ const fakeOcr: OcrEngine = {
   recognize: async () => ({ text: "OCR TEXT Brightline Plumbing", confidence: 0.9 }),
   terminate: async () => undefined,
 };
-const deps = { db, ocr: fakeOcr, stepMs: 0 };
+const aiReplying = (...replies: Parameters<typeof replayModel>[0]) => ({
+  model: replayModel(replies),
+  info: { provider: "test", model: "replay" },
+});
+/** Default: every extraction returns the recorded digital-invoice output. */
+const deps = {
+  db,
+  ocr: fakeOcr,
+  ai: aiReplying({ text: recordedOutput("valid-digital-invoice.json") }),
+  stepMs: 0,
+};
 let owner: TestUser, outsider: TestUser;
 let orgId: string, otherOrgId: string;
 
@@ -248,5 +259,157 @@ describe("process-document — guard rails", () => {
     await processDocument({ orgId, documentId: done }, deps);
     await markDocumentFailed(db, { orgId, documentId: done }, "late");
     expect((await doc(done))?.status).toBe("ready");
+  });
+});
+
+describe("process-document — stage 2 (AI extraction)", () => {
+  const record = async (documentId: string) =>
+    (await db.from("records").select("*").eq("document_id", documentId).single()).data;
+  const lines = async (recordId: string) =>
+    (
+      await db
+        .from("line_items")
+        .select("position, amount_cents, quantity, category")
+        .eq("record_id", recordId)
+        .order("position")
+    ).data ?? [];
+
+  it("saves the record in cents with line items, logs the extraction and matches the entity", async () => {
+    const { data: elm } = await db
+      .from("entities")
+      .insert({ org_id: orgId, kind: "property", name: "12 Elm Street", code: "ELM-12" })
+      .select()
+      .single();
+    const id = await queuedDocument();
+    expect(await processDocument({ orgId, documentId: id }, deps)).toEqual({
+      outcome: "done",
+      status: "ready",
+    });
+
+    const rec = await record(id);
+    expect(rec).toMatchObject({
+      org_id: orgId,
+      status: "needs_review",
+      supplier_name: "Brightline Plumbing Co.",
+      invoice_number: "INV-2041",
+      issue_date: "2026-10-14",
+      currency: "USD",
+      subtotal_cents: 116450,
+      tax_cents: 9607,
+      total_cents: 126057,
+      entity_id: elm!.id,
+      min_confidence: 0.9,
+    });
+    expect(await lines(rec!.id)).toEqual([
+      { position: 1, amount_cents: 42000, quantity: 1, category: "repairs_maintenance" },
+      { position: 2, amount_cents: 56000, quantity: 3.5, category: "labor_subcontract" },
+      { position: 3, amount_cents: 18450, quantity: 4, category: "materials" },
+    ]);
+    // The matched entity is put on the document too.
+    expect((await db.from("documents").select("entity_id").eq("id", id).single()).data?.entity_id).toBe(
+      elm!.id,
+    );
+
+    const { data: extraction } = await db.from("extractions").select("*").eq("document_id", id).single();
+    expect(extraction).toMatchObject({
+      provider: "test",
+      model: "replay",
+      schema_version: 1,
+      attempts: 1,
+      tokens_in: 1200,
+      tokens_out: 300,
+    });
+    expect(rec!.extraction_id).toBe(extraction!.id);
+
+    // Audited as the worker.
+    const { data: audit } = await db
+      .from("audit_log")
+      .select("actor_id")
+      .eq("row_id", rec!.id)
+      .eq("action", "insert")
+      .single();
+    expect(audit?.actor_id).toBe(WORKER_ACTOR_ID);
+  });
+
+  it("a user's entity assignment at upload wins over the AI's suggestion", async () => {
+    const { data: other } = await db
+      .from("entities")
+      .insert({ org_id: orgId, kind: "property", name: "Oak Plaza" })
+      .select()
+      .single();
+    const id = await queuedDocument();
+    await db.from("documents").update({ entity_id: other!.id }).eq("id", id);
+    await processDocument({ orgId, documentId: id }, deps);
+    expect((await record(id))?.entity_id).toBe(other!.id);
+  });
+
+  it("a refusal fails the document with a readable message (no retry)", async () => {
+    const id = await queuedDocument();
+    const result = await processDocument(
+      { orgId, documentId: id },
+      { ...deps, ai: aiReplying({ text: "", finish: "content-filter" }) },
+    );
+    expect(result).toEqual({ outcome: "failed", status: "failed" });
+    expect(await doc(id)).toMatchObject({
+      status: "failed",
+      error: "The AI service declined to process this document.",
+    });
+    expect(await record(id)).toBeNull();
+  });
+
+  it("output that keeps failing validation fails the document after 3 attempts", async () => {
+    const id = await queuedDocument();
+    const result = await processDocument(
+      { orgId, documentId: id },
+      { ...deps, ai: aiReplying({ text: recordedOutput("invalid-fields.json") }) },
+    );
+    expect(result.outcome).toBe("failed");
+    expect((await doc(id))?.error).toMatch(/couldn't produce a valid result/);
+  });
+
+  it("a transient API error is retried by the job and resumes at stage 2 without re-running OCR", async () => {
+    const id = await queuedDocument("pdf/scanned-invoice-3-pages.pdf");
+    let ocrCalls = 0;
+    const countingOcr: OcrEngine = {
+      ...fakeOcr,
+      recognize: async (png) => (ocrCalls++, fakeOcr.recognize(png)),
+    };
+    const flaky = aiReplying({ throws: new Error("overloaded") });
+    await expect(
+      processDocument({ orgId, documentId: id }, { ...deps, ocr: countingOcr, ai: flaky }),
+    ).rejects.toThrow("overloaded");
+    expect((await doc(id))?.status).toBe("analyzing");
+    const afterStage1 = ocrCalls;
+
+    expect(await processDocument({ orgId, documentId: id }, { ...deps, ocr: countingOcr })).toEqual({
+      outcome: "done",
+      status: "ready",
+    });
+    expect(ocrCalls).toBe(afterStage1);
+    expect(await record(id)).not.toBeNull();
+  });
+
+  it("re-processing never overwrites a record a human already approved", async () => {
+    const id = await queuedDocument();
+    await processDocument({ orgId, documentId: id }, deps);
+    const rec = await record(id);
+    await db.from("records").update({ status: "approved", total_cents: 1 }).eq("id", rec!.id);
+    // Put the document back into stage 2 and run again.
+    await db.rpc("transition_document", {
+      p_org: orgId,
+      p_document: id,
+      p_from: ["ready"],
+      p_to: "analyzing",
+    });
+    await processDocument({ orgId, documentId: id }, deps);
+    expect(await record(id)).toMatchObject({ status: "approved", total_cents: 1 });
+    expect((await db.from("extractions").select("id").eq("document_id", id)).data).toHaveLength(2);
+  });
+
+  it("save_extraction is worker-only and status-checked", async () => {
+    const id = await queuedDocument();
+    const args = { p_org: orgId, p_document: id, p_extraction: {}, p_record: {}, p_lines: [] };
+    expect((await owner.client.rpc("save_extraction", args)).error).not.toBeNull();
+    expect((await db.rpc("save_extraction", args)).data?.id ?? null).toBeNull(); // queued, not analyzing
   });
 });
