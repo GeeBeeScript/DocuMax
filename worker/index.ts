@@ -5,6 +5,7 @@ import { extractionModel, extractionModelInfo, extractionProviderOptions } from 
 import { createTesseractEngine } from "@/lib/pipeline/ocr";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { logger } from "./logger";
+import { flushObservability, initObservability, reportJobFailure } from "./observability";
 import { closeBrowser, renderPdf } from "./pdf/render";
 import { batchZipJob } from "./processors/batch-zip";
 import { importCsvJob } from "./processors/import-csv";
@@ -16,6 +17,7 @@ import { markReportFailed, renderReportJob } from "./processors/render-report";
  * One BullMQ Worker per queue; processors live in worker/processors/*.
  */
 
+initObservability();
 const db = createSupabaseAdminClient();
 const STUB_STEP_MS = Number(process.env.STUB_STEP_MS ?? 800);
 const OCR_WORKERS = Number(process.env.OCR_WORKERS ?? 2);
@@ -177,9 +179,24 @@ imports.on("failed", (job) => {
 const workers = [health, documents, reports, zips, imports];
 
 for (const w of workers) {
-  w.on("failed", (job, err) =>
-    logger.error("job failed", { queue: w.name, jobId: job?.id, error: err.message }),
-  );
+  w.on("failed", (job, err) => {
+    const orgId = (job?.data as { orgId?: unknown } | undefined)?.orgId;
+    const final = !!job && job.attemptsMade >= (job.opts.attempts ?? 1);
+    logger.error("job failed", {
+      queue: w.name,
+      jobId: job?.id,
+      attempt: job?.attemptsMade,
+      final,
+      error: err.message,
+    });
+    reportJobFailure(err, {
+      queue: w.name,
+      jobId: job?.id,
+      orgId: typeof orgId === "string" ? orgId : undefined,
+      attempt: job?.attemptsMade,
+      final,
+    });
+  });
   w.on("error", (err) => logger.error("worker error", { queue: w.name, error: err.message }));
 }
 
@@ -190,6 +207,7 @@ async function shutdown(signal: string) {
   await Promise.all(workers.map((w) => w.close()));
   await (await ocrReady).terminate();
   await closeBrowser();
+  await flushObservability();
   process.exit(0);
 }
 

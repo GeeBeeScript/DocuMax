@@ -1,4 +1,5 @@
 import "server-only";
+import { setOrgContext } from "@/lib/observability/context";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -78,5 +79,6 @@ export const getActiveOrg = cache(async (): Promise<ActiveOrgContext | null> => 
 export async function requireActiveOrg(): Promise<ActiveOrgContext> {
   const ctx = await getActiveOrg();
   if (!ctx) redirect("/onboarding");
+  setOrgContext(ctx.org.id);
   return ctx;
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { FormAlert } from "@/components/app/form-alert";
 import { PageHeader } from "@/components/app/page-header";
 import { organizationCopy } from "@/content/app";
+import { DeleteOrganization } from "@/features/org/components/delete-organization";
 import { OrganizationForm } from "@/features/org/components/organization-form";
 import { DEFAULT_BRAND_COLOR } from "@/pdf/components/brand-bar";
 import { canManageMembers } from "@/lib/auth/roles";
@@ -46,6 +47,7 @@ export default async function OrganizationSettingsPage() {
           timezone: ctx.org.timezone,
         }}
       />
+      {ctx.role === "owner" && <DeleteOrganization orgName={ctx.org.name} />}
     </div>
   );
 }

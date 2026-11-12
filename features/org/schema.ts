@@ -51,3 +51,5 @@ export const OrganizationSettingsSchema = z.object({
   timezone: z.string().refine(isTimeZone, "Choose a time zone."),
 });
 export type OrganizationSettingsInput = z.infer<typeof OrganizationSettingsSchema>;
+
+export const DeleteOrganizationSchema = z.object({ confirmName: z.string().trim().min(1).max(120) });
