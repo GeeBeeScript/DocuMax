@@ -120,6 +120,95 @@ const SEEDERS: Record<string, Seeder> = {
     },
     update: { file_name: "renamed-by-intruder.pdf" },
   },
+  extractions: {
+    async seed(ctx, orgId) {
+      const doc = await SEEDERS.documents.seed(ctx, orgId);
+      const { data, error } = await admin
+        .from("extractions")
+        .insert({
+          org_id: orgId,
+          document_id: String(doc.id),
+          provider: "seed",
+          model: "seed",
+          schema_version: 1,
+          raw: {},
+          fields: {},
+          attempts: 1,
+          latency_ms: 1,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({
+      org_id: orgId,
+      document_id: rows.documents?.b.id,
+      provider: "forged",
+      model: "forged",
+      schema_version: 1,
+      raw: {},
+      fields: {},
+      attempts: 1,
+      latency_ms: 1,
+    }),
+    update: { model: "tampered" },
+  },
+  records: {
+    async seed(ctx, orgId) {
+      const doc = await SEEDERS.documents.seed(ctx, orgId);
+      const { data, error } = await admin
+        .from("records")
+        .insert({
+          org_id: orgId,
+          document_id: String(doc.id),
+          supplier_name: "Seed Supplier",
+          total_cents: 1000,
+          min_confidence: 0.9,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    // Planting an approved record (with a large total) in someone else's books.
+    insertPayload: (_ctx, orgId) => ({
+      org_id: orgId,
+      supplier_name: "Forged",
+      total_cents: 999999,
+      status: "approved",
+      min_confidence: 1,
+    }),
+    update: { total_cents: 1, status: "approved" },
+  },
+  line_items: {
+    async seed(ctx, orgId) {
+      const record = await SEEDERS.records.seed(ctx, orgId);
+      const { data, error } = await admin
+        .from("line_items")
+        .insert({
+          org_id: orgId,
+          record_id: String(record.id),
+          position: 1,
+          description: "seed",
+          amount_cents: 1000,
+          confidence: 0.9,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({
+      org_id: orgId,
+      record_id: rows.records?.b.id,
+      position: 99,
+      description: "forged",
+      amount_cents: 999999,
+      confidence: 1,
+    }),
+    update: { amount_cents: 1 },
+  },
   document_pages: {
     async seed(ctx, orgId) {
       const doc = await SEEDERS.documents.seed(ctx, orgId);

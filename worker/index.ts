@@ -1,6 +1,7 @@
 import "./load-env";
 import { Worker, type Job } from "bullmq";
 import { QUEUES, parseJob, redisConnection } from "@/lib/queue";
+import { extractionModel, extractionModelInfo, extractionProviderOptions } from "@/lib/ai/provider";
 import { createTesseractEngine } from "@/lib/pipeline/ocr";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { logger } from "./logger";
@@ -18,6 +19,13 @@ const OCR_WORKERS = Number(process.env.OCR_WORKERS ?? 2);
 // One Tesseract pool per process, reused by every job (language data ships in node_modules). Started now,
 // awaited by the first job (no top-level await: tsx runs this file as CommonJS).
 const ocrReady = createTesseractEngine({ workers: OCR_WORKERS });
+
+// AI provider/model from env (ADR-003). Built at start-up so a missing key fails loudly here, not per job.
+const ai = {
+  model: extractionModel(),
+  providerOptions: extractionProviderOptions(),
+  info: extractionModelInfo(),
+};
 
 const health = new Worker(
   QUEUES.health,
@@ -37,6 +45,7 @@ const documents = new Worker(
     return processDocument(payload, {
       db,
       ocr: await ocrReady,
+      ai,
       stepMs: STUB_STEP_MS,
       log: (message, meta) => logger.info(message, { jobId: job.id, ...meta }),
     });
@@ -83,7 +92,7 @@ for (const w of workers) {
   w.on("error", (err) => logger.error("worker error", { queue: w.name, error: err.message }));
 }
 
-logger.info("worker started", { queues: workers.map((w) => w.name), ocrWorkers: OCR_WORKERS });
+logger.info("worker started", { queues: workers.map((w) => w.name), ocrWorkers: OCR_WORKERS, ai: ai.info });
 
 async function shutdown(signal: string) {
   logger.info("shutting down", { signal });
