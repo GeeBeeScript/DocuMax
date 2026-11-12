@@ -13,14 +13,14 @@
     "e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "worker:dev": "tsx watch worker/index.ts",
-    "worker:start": "tsx worker/index.ts",
+    "worker:dev": "tsx watch --tsconfig tsconfig.worker.json worker/index.ts",
+    "worker:start": "tsx --tsconfig tsconfig.worker.json worker/index.ts",
     "queue:ping": "tsx scripts/queue-ping.ts",
     "check": "npm run lint && npm run typecheck && npm test",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "db:types": "supabase gen types typescript --local > lib/supabase/database.types.tmp && mv lib/supabase/database.types.tmp lib/supabase/database.types.ts && prettier --write lib/supabase/database.types.ts || (rm -f lib/supabase/database.types.tmp; exit 1)",
     "db:reset": "supabase db reset",
-    "test:slow": "SLOW_TESTS=1 vitest run lib/pipeline",
+    "test:slow": "SLOW_TESTS=1 vitest run lib/pipeline pdf",
     "eval:extraction": "tsx scripts/eval-extraction.ts"
   },
   "dependencies": {
