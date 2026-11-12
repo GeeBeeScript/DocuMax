@@ -61,8 +61,10 @@ key strings per fixture and the < 30 s budget for the 3-page scan.
   `tests/support/mock-ai.ts` (`replayModel`), covering valid, partially-null, invalid-field and malformed outputs,
   the retry path, refusals and transport errors.
 - E2E runs the worker with `AI_PROVIDER=mock` (deterministic dev model).
-- Accuracy: `npm run eval:extraction` (real provider; manual / nightly). Via OpenRouter:
-  `AI_PROVIDER=openrouter AI_MODEL=anthropic/claude-sonnet-5.5 npm run eval:extraction`. In Claude Code cloud
+- Accuracy: `npm run eval:extraction` (real provider; manual / nightly; ≈ $0.02 per run on the default model).
+  Results vary between runs: judge a prompt or model change on at least two full runs. Other models:
+  `AI_MODEL=anthropic/claude-sonnet-5.5 npm run eval:extraction`; free `:free` models need `OPENROUTER_ZDR=false`
+  (synthetic fixtures only). In Claude Code cloud
   sessions the key is a proxy-injected network secret: set `OPENROUTER_API_KEY=proxy-injected` and
   `NODE_USE_ENV_PROXY=1` (Node's fetch ignores `HTTPS_PROXY` otherwise). Add a fixture by generating the document
   in `tests/fixtures/generate.mjs` and its expected required fields in `tests/fixtures/labels/extraction.json`.

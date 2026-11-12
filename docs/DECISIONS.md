@@ -22,6 +22,7 @@ equivalent of Celery. Shared domain code lives in `lib/`.
 **Status:** Accepted (2026-11-10)
 `lib/ai/provider.ts` maps `AI_PROVIDER` + `AI_MODEL` to an AI SDK model. Default: Anthropic `claude-sonnet-5-5`.
 Structured output validated by zod. **Why:** swap providers/models without code changes; compare accuracy/cost.
+_Default model superseded by ADR-018 (open model via OpenRouter); the provider-agnostic design stands._
 
 ## ADR-004 — Playwright (not WeasyPrint) for PDFs
 
@@ -143,3 +144,17 @@ refuses it when `NODE_ENV=production`. It is not a quality baseline: accuracy is
 so the extraction eval can compare models without code changes (ADR-003). Anthropic-only request options (refusal
 fallbacks, effort) are not sent through OpenRouter. Before using it on real customer documents, review OpenRouter's
 data-handling terms (documents pass through a third party); the default for production remains a direct provider.
+
+## ADR-018 — Default extraction model: open-weight NVIDIA Nemotron 3.5 Super via OpenRouter, zero retention
+
+**Status:** Accepted (2026-11-14) — supersedes ADR-003's default model
+`AI_PROVIDER` now defaults to `openrouter` and the model to `nvidia/nemotron-3.5-super-vl` (open weights, 12B active
+/ 120B MoE). Every request is routed only to hosts that neither collect nor retain prompts
+(`provider: { data_collection: "deny", zdr: true }`) and that honor structured output (`require_parameters`).
+Each provider has its own default model (`DEFAULT_MODELS` in `lib/ai/provider.ts`); `AI_MODEL` overrides.
+**Why:** on the labeled fixtures it met the bar (two full runs 9/9 plus 4/4 of a third, ending on credit, with the
+final prompt) at ≈ $0.002 per document (≈ $0.15 / $0.47 per M tokens) versus ≈ $0.02 for Claude Sonnet 5.5, and an
+open model keeps the option to self-host. The owner chose the open model after an eval comparison was offered.
+**Trade-offs:** 5–30 s per document (it reasons; ~4K output tokens), occasional schema retries; results vary
+between runs, so changes to the prompt or model must be judged on repeated eval runs. Claude Sonnet 5.5 was not
+measured (no credit) — it remains one setting away (`AI_PROVIDER=anthropic` or `AI_MODEL=anthropic/claude-sonnet-5.5`).
