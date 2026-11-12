@@ -131,3 +131,12 @@ Local development and E2E run the full pipeline without an API key using a regex
 mock class. It never claims more than 0.6 confidence (so its output always goes to review) and `extractionModel()`
 refuses it when `NODE_ENV=production`. It is not a quality baseline: accuracy is measured only with real models via
 `npm run eval:extraction`.
+
+## ADR-017 — OpenRouter as an additional AI provider
+
+**Status:** Accepted (2026-11-14)
+`AI_PROVIDER=openrouter` (+ `OPENROUTER_API_KEY`, `AI_MODEL` = an OpenRouter id such as
+`anthropic/claude-sonnet-5.5`) via `@openrouter/ai-sdk-provider`. **Why:** one key reaches Claude and other models,
+so the extraction eval can compare models without code changes (ADR-003). Anthropic-only request options (refusal
+fallbacks, effort) are not sent through OpenRouter. Before using it on real customer documents, review OpenRouter's
+data-handling terms (documents pass through a third party); the default for production remains a direct provider.
