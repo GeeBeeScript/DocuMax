@@ -5,6 +5,9 @@ import type {
   InvoiceExtractionResult,
 } from "@/lib/ai/extraction-schema";
 import { parseToCents, type Cents } from "@/lib/calc/money";
+import { requiredFields } from "@/lib/validation/required-fields";
+
+export { requiredFields };
 
 /**
  * Stage 2 → rows: validated extraction → `records` + `line_items` values. Pure: no I/O, no model calls.
@@ -62,12 +65,6 @@ export interface MappingResult {
   record: MappedRecord;
   lineItems: MappedLineItem[];
   entityMatch: EntityMatch | null;
-}
-
-/** Fields that must be present and trusted (docs/DOCUMENT_PIPELINE.md → missing_field / low_confidence). */
-export function requiredFields(documentType: DocumentType | null): string[] {
-  const base = ["supplier_name", "issue_date", "total_cents", "currency"];
-  return documentType === "invoice" ? [...base, "invoice_number"] : base;
 }
 
 /**

@@ -73,3 +73,34 @@ export function sumCents(values: readonly Cents[]): Cents {
 export function formatCents(value: Cents, currency = "USD", locale = "en-US"): string {
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(value / 100);
 }
+
+/**
+ * Exact `unit price × quantity` for a decimal-string quantity ("3.5", "0.125", "-2"), rounded half away from zero to
+ * whole cents. Uses BigInt scaling — no floating point. Returns null for an unparseable quantity.
+ */
+export function multiplyCents(unit: Cents, quantity: string): Cents | null {
+  const match = /^(-)?(\d+)(?:\.(\d+))?$/.exec(quantity.trim());
+  if (!match) return null;
+  const [, sign, whole, frac = ""] = match;
+  const scale = BigInt(10) ** BigInt(frac.length);
+  const q = BigInt(whole + frac) * BigInt(sign ? -1 : 1);
+  const product = BigInt(unit) * q; // in cents × scale
+  const zero = BigInt(0);
+  const negative = product < zero;
+  const abs = negative ? -product : product;
+  let rounded = abs / scale;
+  if ((abs % scale) * BigInt(2) >= scale) rounded += BigInt(1);
+  return cents(Number(negative ? -rounded : rounded));
+}
+
+/** Cents → plain decimal string for editing ("126057" → "1260.57", "-5" → "-0.05"). */
+export function centsToDecimal(value: Cents): string {
+  const negative = value < 0;
+  const abs = Math.abs(value);
+  return `${negative ? "-" : ""}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`;
+}
+
+/** |a − b| ≤ tolerance, all in cents. */
+export function withinCents(a: Cents, b: Cents, tolerance: number): boolean {
+  return Math.abs(a - b) <= tolerance;
+}
