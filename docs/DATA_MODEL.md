@@ -113,12 +113,12 @@ are never inserted — they go to the error report (row, column, message).
 | ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `org_plan(org)`                           | any member              | The plan while Stripe's status is `active`, `trialing` or `past_due`; otherwise `free`.                            |
 | `consume_document_quota(org, n)`          | writers                 | Atomic upsert-increment of this month's counter; raises `quota_exceeded` (hint = remaining) instead of going over. |
-| `create_document_upload(…)`               | writers                 | `consume_document_quota` + the pending `documents` row in one transaction (used by `requestUpload`).               |
+| `create_document_upload(…)`               | writers                 | `consume_document_quota` + the pending `documents` row in one transaction — the only way users create documents.   |
 | `cancel_document_upload(doc)`             | writers                 | Deletes a still-`uploading` document and releases its quota.                                                       |
 | `release_document_quota(org, n, period?)` | service role / internal | Never below zero; not callable by users (they could reset their counter).                                          |
 | `org_usage(org)`                          | members                 | Plan, documents used / cap, seats used (members + open invites) / cap, period start.                               |
 | `set_stripe_customer(org, customer)`      | owners                  | Stores the Stripe customer created at checkout (never overwrites one).                                             |
-| trigger `enforce_seat_limit`              | —                       | New invites are refused (`seat_limit`) when members + open invites would exceed the plan's seats.                  |
+| trigger `enforce_seat_limit`              | —                       | New (or reopened) invites are refused (`seat_limit`) when members + open invites would exceed the plan's seats.    |
 
 Plan caps are defined in code (`lib/billing/plans.ts`, used by the UI and pricing page) and mirrored in
 `plan_limits` for enforcement in the database; Stripe prices map to plans via `STRIPE_PRICE_*` env ids, with the
@@ -141,7 +141,7 @@ The generic trigger `audit_row_change()` is attached to every ✎ table. The wor
 | `shares_org_with(user)`                          | Profile visibility between teammates                                                     |
 | `storage_org_id(path)`                           | `{org_id}/…` prefix → uuid (null if not a uuid) for storage policies                     |
 | `create_organization(name, entity_kind)`         | Creates org + owner membership, unique slug, sets `last_org_id`                          |
-| `accept_invite(token)`                           | Validates hash/expiry/email, adds membership with the invited role                       |
+| `accept_invite(token)`                           | Validates hash/expiry/email and seats, adds membership with the invited role             |
 | `invite_preview(token)`                          | Org name, role, email, expired/accepted flags — nothing else (used by `/invite/[token]`) |
 | Triggers                                         | `set_updated_at`, `prevent_org_change`, `audit_row_change`, `guard_membership_change`    |
 

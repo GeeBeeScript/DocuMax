@@ -298,3 +298,7 @@ Choices:
   organization row; database cascades remove everything else. User-account deletion stays an operator task.
 - **Legal pages are drafts** written from how the product works; they show a "pending legal review" notice until
   reviewed.
+- **Security review fixes** (`20261121090000_security_fixes.sql`): direct `documents` inserts revoked (uploads must
+  go through `create_document_upload`, which counts quota); invite updates limited to `role`, seat trigger also on
+  updates that reopen an invite, and `accept_invite` re-checks seats; `safeNext` resolves the target like a browser
+  and accepts it only on our origin (control characters and backslashes are rejected).
