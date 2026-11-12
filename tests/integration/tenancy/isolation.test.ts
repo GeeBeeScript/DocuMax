@@ -262,6 +262,38 @@ const SEEDERS: Record<string, Seeder> = {
     }),
     update: { reason: "tampered" },
   },
+  allocations: {
+    async seed(_ctx, orgId) {
+      const record = await SEEDERS.records.seed(_ctx, orgId);
+      const { data: entity, error: entityError } = await admin
+        .from("entities")
+        .insert({ org_id: orgId, kind: "property", name: `Alloc ${randomUUID().slice(0, 6)}` })
+        .select()
+        .single();
+      if (entityError) throw entityError;
+      const { data, error } = await admin
+        .from("allocations")
+        .insert({
+          org_id: orgId,
+          record_id: String(record.id),
+          entity_id: entity.id,
+          method: "percent",
+          percent_bp: 10000,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({
+      org_id: orgId,
+      record_id: rows.records?.b.id,
+      entity_id: rows.entities?.b.id,
+      method: "percent",
+      percent_bp: 10000,
+    }),
+    update: { percent_bp: 1 },
+  },
   document_pages: {
     async seed(ctx, orgId) {
       const doc = await SEEDERS.documents.seed(ctx, orgId);

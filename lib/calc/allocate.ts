@@ -121,3 +121,18 @@ export function allocateByAmount<K extends string>(
   else out.push({ key: remainderKey, cents: cents(remainder) });
   return out;
 }
+
+/** "60", "33.33", "12,5 %" → basis points (6000, 3333, 1250) without floating point; null when invalid or > 2 dp. */
+export function parsePercentBp(input: string): number | null {
+  const m = /^(\d{1,3})(?:[.,](\d{1,2}))?$/.exec(input.trim().replace(/\s*%$/, ""));
+  if (!m) return null;
+  const bp = Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
+  return bp <= FULL_BP ? bp : null;
+}
+
+/** 3333 → "33.33", 6000 → "60". */
+export function formatBp(bp: number): string {
+  const whole = Math.trunc(bp / 100);
+  const frac = Math.abs(bp % 100);
+  return frac === 0 ? String(whole) : `${whole}.${String(frac).padStart(2, "0").replace(/0$/, "")}`;
+}

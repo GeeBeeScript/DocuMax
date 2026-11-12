@@ -182,3 +182,26 @@ Decisions made while building Phase 6 that the docs didn't fix:
 - **Preview page highlight is a text search**, since fields aren't traced to page coordinates: the preview opens on
   the page that prints the first flagged value (amounts with or without thousands separators), else page 1.
 - **Worker writes show as "DocuMax"** in history and the audit log (`SYSTEM_ACTOR_ID`, `lib/audit/actors.ts`).
+
+## ADR-020 — Postings: how approved records become statement figures
+
+**Status:** Accepted (2026-11-12)
+Every figure on a statement, the entity page, exports and summaries comes from one function,
+`postRecord()` (`lib/calc/postings.ts`), which turns an approved record into per-entity net / tax / gross amounts.
+Choices:
+
+- **Dating and inclusion:** a record belongs to the period of its `issue_date`; only `approved` records count;
+  records without a total or issue date are left out (they can only be approved with a reason).
+- **Currencies are never mixed:** a statement is in the org's `default_currency`; records in other currencies are
+  listed separately (count + total per currency), not converted. Conversion would need rates and a policy.
+- **Fixed-amount splits keep the remainder at home** (the record's entity) rather than requiring amounts to add up
+  exactly — "$200 to Unit B, the rest stays" is the common case. Percent splits must total exactly 100%.
+- **Tax follows the money:** split in proportion to gross shares (record-level) or net shares (line-level), with
+  largest-remainder rounding, so Σ net = total − tax, Σ tax = tax and Σ gross = total for every record, to the cent
+  (property-tested). When the lines don't add up to the subtotal, the difference becomes its own posting instead of
+  being dropped.
+- **Record- or line-level, not both**, per record — combining them has no unambiguous meaning for fixed amounts.
+- **Credit notes** printed with positive amounts post as negatives (fixed split amounts are entered as printed and
+  take the same sign).
+- **Time zone** (`organizations.timezone`, default UTC) only decides what "this month" is; issue dates are calendar
+  dates. The field is added to the organization settings page with branding (Phase 8); until then it is UTC.

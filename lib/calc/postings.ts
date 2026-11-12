@@ -85,7 +85,13 @@ export function postingSign(record: Pick<CalcRecord, "documentType" | "totalCent
   return record.documentType === "credit_note" && (record.totalCents ?? 0) > 0 ? -1 : 1;
 }
 
-function splitBy(total: Cents, allocs: readonly CalcAllocation[], remainderKey: string): Share[] {
+/** Fixed amounts are stored as printed (like the record), so they take the posting sign too. */
+function splitBy(
+  total: Cents,
+  allocs: readonly CalcAllocation[],
+  remainderKey: string,
+  sign: number,
+): Share[] {
   if (allocs[0]!.method === "percent") {
     return allocateByPercent(
       total,
@@ -94,7 +100,7 @@ function splitBy(total: Cents, allocs: readonly CalcAllocation[], remainderKey: 
   }
   return allocateByAmount(
     total,
-    allocs.map((a) => ({ key: a.entityId, amountCents: cents(a.amountCents ?? 0) })),
+    allocs.map((a) => ({ key: a.entityId, amountCents: cents(sign * (a.amountCents ?? 0)) })),
     remainderKey,
   );
 }
@@ -144,13 +150,18 @@ export function postRecord(record: CalcRecord): Posting[] {
     const untaxed = parts.flatMap((piece) => {
       const allocs = piece.lineId ? lineAllocs.filter((a) => a.lineItemId === piece.lineId) : [];
       if (allocs.length === 0) return [{ key: home, piece, net: piece.net, split: false }];
-      return splitBy(piece.net, allocs, home).map((s) => ({ key: s.key, piece, net: s.cents, split: true }));
+      return splitBy(piece.net, allocs, home, sign).map((s) => ({
+        key: s.key,
+        piece,
+        net: s.cents,
+        split: true,
+      }));
     });
     rows = withTax(untaxed, tax);
   } else {
     // Mode A: gross shares per entity; tax follows gross; each entity's net is spread over the pieces exactly.
     const split = recordAllocs.length > 0;
-    const gross = split ? splitBy(total, recordAllocs, home) : [{ key: home, cents: total }];
+    const gross = split ? splitBy(total, recordAllocs, home, sign) : [{ key: home, cents: total }];
     const taxShares = allocateByWeights(
       tax,
       gross.map((g) => ({ key: g.key, weight: g.cents })),

@@ -100,6 +100,13 @@ export interface ReviewItem {
   /** Serializable context so the browser can re-validate live with the same rules as the server. */
   context: ValidationContext;
   timeline: TimelineEvent[];
+  allocations: {
+    entityId: string;
+    lineItemId: string | null;
+    method: "percent" | "amount";
+    percentBp: number | null;
+    amountCents: number | null;
+  }[];
   /** Neighbours in the (filtered) queue, for J/K and "next item" after a decision. */
   prevId: string | null;
   nextId: string | null;
@@ -155,14 +162,15 @@ export async function getReviewItem(
     .from("records")
     .select(
       `*, entity:entities(name), line_items(*), approver:profiles!records_approved_by_fkey(full_name, email),
-       issues:validation_issues(field, resolved_at)`,
+       issues:validation_issues(field, resolved_at),
+       allocations(entity_id, line_item_id, method, percent_bp, amount_cents)`,
     )
     .eq("org_id", orgId)
     .eq("id", recordId)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const { entity, line_items, approver, issues, ...record } = data;
+  const { entity, line_items, approver, issues, allocations, ...record } = data;
   const lineItems = [...line_items].sort((a, b) => a.position - b.position);
 
   const [document, pages, queue, timeline] = await Promise.all([
@@ -193,6 +201,13 @@ export async function getReviewItem(
     initialPage: highlightPage(pages, record, flaggedField),
     context,
     timeline,
+    allocations: allocations.map((a) => ({
+      entityId: a.entity_id,
+      lineItemId: a.line_item_id,
+      method: a.method,
+      percentBp: a.percent_bp,
+      amountCents: a.amount_cents,
+    })),
     prevId,
     nextId,
     position: index >= 0 ? index + 1 : null,

@@ -23,6 +23,85 @@ export type Database = {
   };
   public: {
     Tables: {
+      allocations: {
+        Row: {
+          amount_cents: number | null;
+          created_at: string;
+          created_by: string | null;
+          entity_id: string;
+          id: string;
+          line_item_id: string | null;
+          method: Database["public"]["Enums"]["allocation_method"];
+          org_id: string;
+          percent_bp: number | null;
+          record_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_cents?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          entity_id: string;
+          id?: string;
+          line_item_id?: string | null;
+          method: Database["public"]["Enums"]["allocation_method"];
+          org_id: string;
+          percent_bp?: number | null;
+          record_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_cents?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          entity_id?: string;
+          id?: string;
+          line_item_id?: string | null;
+          method?: Database["public"]["Enums"]["allocation_method"];
+          org_id?: string;
+          percent_bp?: number | null;
+          record_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "allocations_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "allocations_entity_id_fkey";
+            columns: ["entity_id"];
+            isOneToOne: false;
+            referencedRelation: "entities";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "allocations_line_item_id_fkey";
+            columns: ["line_item_id"];
+            isOneToOne: false;
+            referencedRelation: "line_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "allocations_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "allocations_record_id_fkey";
+            columns: ["record_id"];
+            isOneToOne: false;
+            referencedRelation: "records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       audit_log: {
         Row: {
           action: Database["public"]["Enums"]["audit_action"];
@@ -477,6 +556,7 @@ export type Database = {
           name: string;
           review_threshold: number;
           slug: string;
+          timezone: string;
           updated_at: string;
         };
         ComputedFields: never;
@@ -492,6 +572,7 @@ export type Database = {
           name: string;
           review_threshold?: number;
           slug: string;
+          timezone?: string;
           updated_at?: string;
         };
         Update: {
@@ -506,6 +587,7 @@ export type Database = {
           name?: string;
           review_threshold?: number;
           slug?: string;
+          timezone?: string;
           updated_at?: string;
         };
         Relationships: [];
@@ -844,6 +926,7 @@ export type Database = {
           name: string;
           review_threshold: number;
           slug: string;
+          timezone: string;
           updated_at: string;
         };
         SetofOptions: {
@@ -1041,6 +1124,15 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      set_allocations: {
+        Args: {
+          p_line_item: string;
+          p_method: Database["public"]["Enums"]["allocation_method"];
+          p_record: string;
+          p_splits: Json;
+        };
+        Returns: number;
+      };
       shares_org_with: { Args: { p_user: string }; Returns: boolean };
       slugify: { Args: { p_text: string }; Returns: string };
       storage_org_id: { Args: { p_name: string }; Returns: string };
@@ -1080,6 +1172,7 @@ export type Database = {
       };
     };
     Enums: {
+      allocation_method: "percent" | "amount";
       audit_action: "insert" | "update" | "delete";
       cost_category:
         | "repairs_maintenance"
@@ -1225,6 +1318,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      allocation_method: ["percent", "amount"],
       audit_action: ["insert", "update", "delete"],
       cost_category: [
         "repairs_maintenance",
