@@ -1,0 +1,130 @@
+{
+  "documentType": {
+    "value": "invoice",
+    "confidence": 0.99
+  },
+  "supplier": {
+    "name": {
+      "value": "Brightline Plumbing Co.",
+      "confidence": 0.97
+    },
+    "taxId": {
+      "value": "47-2291034",
+      "confidence": 0.97
+    },
+    "address": {
+      "value": "410 Canal Street, Springfield",
+      "confidence": 0.95
+    }
+  },
+  "invoiceNumber": {
+    "value": "INV-2041",
+    "confidence": 0.97
+  },
+  "issueDate": {
+    "value": "2026-10-14",
+    "confidence": 0.97
+  },
+  "dueDate": {
+    "value": "2026-11-13",
+    "confidence": 0.97
+  },
+  "currency": {
+    "value": "USD",
+    "confidence": 0.9
+  },
+  "subtotal": {
+    "value": "1164.50",
+    "confidence": 0.97
+  },
+  "tax": {
+    "amount": {
+      "value": "96.07",
+      "confidence": 0.97
+    },
+    "rate": {
+      "value": "8.25",
+      "confidence": 0.97
+    }
+  },
+  "total": {
+    "value": "1260.57",
+    "confidence": 0.99
+  },
+  "category": {
+    "value": "repairs_maintenance",
+    "confidence": 0.8
+  },
+  "entityHint": {
+    "value": "12 Elm Street",
+    "confidence": 0.93
+  },
+  "lineItems": [
+    {
+      "description": {
+        "value": "Replace water heater valve",
+        "confidence": 0.97
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.97
+      },
+      "unitPrice": {
+        "value": null,
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "420.00",
+        "confidence": 0.97
+      },
+      "category": {
+        "value": "repairs_maintenance",
+        "confidence": 0.8
+      }
+    },
+    {
+      "description": {
+        "value": "Labor 3.5 hours",
+        "confidence": 0.97
+      },
+      "quantity": {
+        "value": "3.5",
+        "confidence": 0.97
+      },
+      "unitPrice": {
+        "value": null,
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "560.00",
+        "confidence": 0.97
+      },
+      "category": {
+        "value": "labor_subcontract",
+        "confidence": 0.8
+      }
+    },
+    {
+      "description": {
+        "value": "Copper fittings",
+        "confidence": 0.97
+      },
+      "quantity": {
+        "value": "4",
+        "confidence": 0.97
+      },
+      "unitPrice": {
+        "value": null,
+        "confidence": 0.9
+      },
+      "amount": {
+        "value": "184.50",
+        "confidence": 0.97
+      },
+      "category": {
+        "value": "materials",
+        "confidence": 0.8
+      }
+    }
+  ]
+}

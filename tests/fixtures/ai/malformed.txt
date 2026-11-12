@@ -1,0 +1,1 @@
+{"documentType": {"value": "invoice", "confidence": 0.9}, "supplier": 
