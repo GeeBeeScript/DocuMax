@@ -6,7 +6,7 @@ import { OrgScopeError } from "@/lib/db/org-scope";
 import { createTesseractEngine, type OcrEngine } from "@/lib/pipeline/ocr";
 import { markDocumentFailed, processDocument, WORKER_ACTOR_ID } from "@/worker/processors/process-document";
 import { recordedOutput, replayModel } from "@/tests/support/mock-ai";
-import { adminClient, cleanup, createOrg, createUser, type TestUser } from "../helpers";
+import { addMember, adminClient, cleanup, createOrg, createUser, type TestUser } from "../helpers";
 
 const db = adminClient();
 /** Fast stand-in for Tesseract; the scanned-PDF test uses the real engine. */
@@ -76,14 +76,14 @@ afterAll(async () => {
 });
 
 describe("process-document — stage 1", () => {
-  it("digital PDF: text layer saved, sha256 + page count recorded, walks to ready as the worker", async () => {
+  it("digital PDF: text layer saved, sha256 + page count recorded, walks to review as the worker", async () => {
     const id = await queuedDocument();
     expect(await processDocument({ orgId, documentId: id }, deps)).toEqual({
       outcome: "done",
-      status: "ready",
+      status: "needs_review",
     });
     expect(await doc(id)).toMatchObject({
-      status: "ready",
+      status: "needs_review",
       page_count: 1,
       sha256: expect.stringMatching(/^[0-9a-f]{64}$/),
     });
@@ -103,7 +103,7 @@ describe("process-document — stage 1", () => {
       "extracting",
       "analyzing",
       "validating",
-      "ready",
+      "needs_review",
     ]);
   });
 
@@ -111,7 +111,9 @@ describe("process-document — stage 1", () => {
     const ocr = await createTesseractEngine({ workers: 2 });
     try {
       const id = await queuedDocument("pdf/scanned-invoice-3-pages.pdf");
-      expect((await processDocument({ orgId, documentId: id }, { ...deps, ocr })).status).toBe("ready");
+      expect((await processDocument({ orgId, documentId: id }, { ...deps, ocr })).status).toBe(
+        "needs_review",
+      );
       const saved = await pages(id);
       expect(saved.map((p) => p.source)).toEqual(["ocr", "ocr", "ocr"]);
       for (const p of saved) {
@@ -174,7 +176,7 @@ describe("process-document — stage 1", () => {
     expect((await doc(id))?.status).toBe("extracting");
     expect(await processDocument({ orgId, documentId: id }, deps)).toEqual({
       outcome: "done",
-      status: "ready",
+      status: "needs_review",
     });
     expect(await pages(id)).toHaveLength(3);
   });
@@ -186,7 +188,7 @@ describe("process-document — guard rails", () => {
     await processDocument({ orgId, documentId: id }, deps);
     expect(await processDocument({ orgId, documentId: id }, deps)).toEqual({
       outcome: "skipped",
-      status: "ready",
+      status: "needs_review",
     });
   });
 
@@ -258,7 +260,7 @@ describe("process-document — guard rails", () => {
     const done = await queuedDocument();
     await processDocument({ orgId, documentId: done }, deps);
     await markDocumentFailed(db, { orgId, documentId: done }, "late");
-    expect((await doc(done))?.status).toBe("ready");
+    expect((await doc(done))?.status).toBe("needs_review");
   });
 });
 
@@ -283,7 +285,7 @@ describe("process-document — stage 2 (AI extraction)", () => {
     const id = await queuedDocument();
     expect(await processDocument({ orgId, documentId: id }, deps)).toEqual({
       outcome: "done",
-      status: "ready",
+      status: "needs_review",
     });
 
     const rec = await record(id);
@@ -383,7 +385,7 @@ describe("process-document — stage 2 (AI extraction)", () => {
 
     expect(await processDocument({ orgId, documentId: id }, { ...deps, ocr: countingOcr })).toEqual({
       outcome: "done",
-      status: "ready",
+      status: "needs_review",
     });
     expect(ocrCalls).toBe(afterStage1);
     expect(await record(id)).not.toBeNull();
@@ -398,7 +400,7 @@ describe("process-document — stage 2 (AI extraction)", () => {
     await db.rpc("transition_document", {
       p_org: orgId,
       p_document: id,
-      p_from: ["ready"],
+      p_from: ["needs_review"],
       p_to: "analyzing",
     });
     await processDocument({ orgId, documentId: id }, deps);
@@ -411,5 +413,117 @@ describe("process-document — stage 2 (AI extraction)", () => {
     const args = { p_org: orgId, p_document: id, p_extraction: {}, p_record: {}, p_lines: [] };
     expect((await owner.client.rpc("save_extraction", args)).error).not.toBeNull();
     expect((await db.rpc("save_extraction", args)).data?.id ?? null).toBeNull(); // queued, not analyzing
+  });
+});
+
+describe("process-document — stages 3–4 (validation + routing)", () => {
+  const record = async (documentId: string) =>
+    (await db.from("records").select("*").eq("document_id", documentId).single()).data;
+  const issueCodes = async (recordId: string) =>
+    ((await db.from("validation_issues").select("code").eq("record_id", recordId)).data ?? [])
+      .map((i) => i.code)
+      .sort();
+
+  /** A recorded output for a unique, internally consistent invoice (no line items, entity hint "12 Elm Street"). */
+  const cleanOutput = (invoiceNumber: string, total = "126057") => {
+    const raw = JSON.parse(recordedOutput("valid-digital-invoice.json"));
+    raw.invoiceNumber.value = invoiceNumber;
+    raw.total.value = (Number(total) / 100).toFixed(2);
+    raw.subtotal.value = ((Number(total) - 9607) / 100).toFixed(2);
+    raw.lineItems = [];
+    raw.supplier.name.value = `Clean Supplier ${invoiceNumber}`;
+    return JSON.stringify(raw);
+  };
+  // A fresh org: earlier tests upload the same fixture files and create look-alike properties, which would
+  // (correctly) trigger duplicate / ambiguous-entity results here. `owner` joins it so queuedDocument works.
+  let elmId: string;
+  let sharedOrgId: string;
+  let validationOwner: TestUser;
+  beforeAll(async () => {
+    sharedOrgId = orgId;
+    validationOwner = await createUser("wk-validate");
+    orgId = (await createOrg(validationOwner, "Validation Org")).id;
+    await addMember(orgId, owner, "member");
+    const { data } = await db
+      .from("entities")
+      .insert({ org_id: orgId, kind: "property", name: "12 Elm Street", code: "ELM-V" })
+      .select()
+      .single();
+    elmId = data!.id;
+  });
+  afterAll(async () => {
+    const { data } = await db.from("documents").select("storage_path").eq("org_id", orgId);
+    if (data?.length) await db.storage.from("documents").remove(data.map((d) => d.storage_path));
+    await cleanup([orgId], [validationOwner]);
+    orgId = sharedOrgId;
+  });
+
+  it("a clean document is ready; the record waits for approval and has no issues", async () => {
+    const id = await queuedDocument("pdf/utility-bill.pdf");
+    const result = await processDocument(
+      { orgId, documentId: id },
+      { ...deps, ai: aiReplying({ text: cleanOutput("CLEAN-1") }) },
+    );
+    expect(result).toEqual({ outcome: "done", status: "ready" });
+    const rec = await record(id);
+    expect(rec).toMatchObject({ status: "needs_review", entity_id: elmId });
+    expect(await issueCodes(rec!.id)).toEqual([]);
+  });
+
+  it("with auto-approve on, a clean record is approved by the system (audited)", async () => {
+    await db.from("organizations").update({ auto_approve: true }).eq("id", orgId);
+    const id = await queuedDocument("pdf/credit-note.pdf");
+    expect(
+      (
+        await processDocument(
+          { orgId, documentId: id },
+          { ...deps, ai: aiReplying({ text: cleanOutput("CLEAN-2") }) },
+        )
+      ).status,
+    ).toBe("ready");
+    const rec = await record(id);
+    expect(rec).toMatchObject({ status: "approved", approved_by: null });
+    const { data: actions } = await db
+      .from("review_actions")
+      .select("action, actor_id, reason")
+      .eq("record_id", rec!.id);
+    expect(actions).toEqual([
+      { action: "approve", actor_id: null, reason: "Auto-approved: no issues found" },
+    ]);
+    await db.from("organizations").update({ auto_approve: false }).eq("id", orgId);
+  });
+
+  it("issues route to review even with auto-approve; they are stored per record", async () => {
+    await db.from("organizations").update({ auto_approve: true }).eq("id", orgId);
+    const id = await queuedDocument("pdf/mixed-invoice.pdf");
+    const raw = JSON.parse(cleanOutput("FLAGGED-1"));
+    raw.total.value = "999.99"; // subtotal + tax ≠ total
+    raw.entityHint.value = null;
+    expect(
+      (
+        await processDocument(
+          { orgId, documentId: id },
+          { ...deps, ai: aiReplying({ text: JSON.stringify(raw) }) },
+        )
+      ).status,
+    ).toBe("needs_review");
+    const rec = await record(id);
+    expect(rec?.status).toBe("needs_review");
+    expect(await issueCodes(rec!.id)).toEqual(["no_entity", "total_mismatch"]);
+    await db.from("organizations").update({ auto_approve: false }).eq("id", orgId);
+  });
+
+  it("a second upload of the same invoice is flagged as a duplicate (and the same file as duplicate_file)", async () => {
+    const first = await queuedDocument("images/sample-receipt.png", "image/png");
+    await processDocument(
+      { orgId, documentId: first },
+      { ...deps, ai: aiReplying({ text: cleanOutput("DUP-77") }) },
+    );
+    const second = await queuedDocument("images/sample-receipt.png", "image/png");
+    await processDocument(
+      { orgId, documentId: second },
+      { ...deps, ai: aiReplying({ text: cleanOutput("dup 77") }) },
+    );
+    expect(await issueCodes((await record(second))!.id)).toEqual(["duplicate", "duplicate_file"]);
   });
 });

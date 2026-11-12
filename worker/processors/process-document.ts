@@ -6,6 +6,8 @@ import { ExtractionError, extractInvoice, type ExtractOptions } from "@/lib/ai/e
 import type { PageInput } from "@/lib/ai/prompt";
 import { extractDocumentText } from "@/lib/pipeline/extract-document";
 import { mapExtraction, type PageConfidence } from "@/lib/pipeline/map-extraction";
+import { routeRecord, validateRecord } from "@/lib/validation";
+import { loadValidationContext, toValidationRecord } from "@/lib/validation/load";
 import { isPipelineError } from "@/lib/pipeline/errors";
 import type { OcrEngine } from "@/lib/pipeline/ocr";
 import type { JobPayload } from "@/lib/queue";
@@ -15,16 +17,14 @@ import type { Database } from "@/lib/supabase/database.types";
  * `process-document` (docs/DOCUMENT_PIPELINE.md).
  *   Stage 1 — text extraction (Phase 4): queued → extracting → [text layer / OCR → document_pages] → analyzing
  *   Stage 2 — AI extraction (Phase 5): analyzing → [model → validated schema → records/line_items] → validating
- *   Stage 3 — STUB until Phase 6: validating → ready, with a short pause.
+ *   Stages 3–4 — validation + routing (Phase 6): validating → needs_review | ready (clean records may be
+ *   auto-approved when the org enabled it).
  * Guard rails: the row must belong to the job's org (forOrg.requireRow); every transition is status-checked in
  * the database, so duplicate/late jobs stop instead of moving a document backwards; permanent document problems
  * (PipelineError) fail the document immediately with a readable message, anything else is retried by BullMQ.
  */
 
 export const WORKER_ACTOR_ID = "00000000-0000-0000-0000-000000000000";
-
-/** Placeholder for validation + routing (Phase 6). */
-export const STUB_STEPS: readonly (readonly [DocumentStatus, DocumentStatus])[] = [["validating", "ready"]];
 
 /** Cap on org context sent with each extraction (entities / known suppliers). */
 const CONTEXT_LIMIT = 300;
@@ -121,6 +121,50 @@ async function extractStage(
   if (error) throw error;
   if (!data?.id) return { outcome: "skipped", status: "extracting" }; // moved on concurrently
   return "analyzing";
+}
+
+/** Stages 3–4: validate the record and route the document. */
+async function validationStage(
+  payload: JobPayload<"process-document">,
+  sha256: string | null,
+  { db, log = () => undefined }: ProcessDeps,
+): Promise<ProcessResult> {
+  const { orgId, documentId } = payload;
+  const { data: record, error } = await db
+    .from("records")
+    .select("*, line_items(position, quantity, unit_price_cents, amount_cents)")
+    .eq("org_id", orgId)
+    .eq("document_id", documentId)
+    .maybeSingle();
+  if (error) throw error;
+
+  let issues: ReturnType<typeof validateRecord> = [];
+  let routing: ReturnType<typeof routeRecord> = { documentStatus: "ready", recordStatus: "needs_review" };
+  if (record) {
+    const forValidation = toValidationRecord(record, record.line_items);
+    const ctx = await loadValidationContext(db, { orgId, record: forValidation, documentId, sha256 });
+    issues = validateRecord(forValidation, ctx);
+    routing = routeRecord(issues, { autoApprove: ctx.autoApprove });
+  }
+
+  const { data, error: rpcError } = await db.rpc("save_validation", {
+    p_org: orgId,
+    p_document: documentId,
+    p_issues: issues as never,
+    p_record_status: routing.recordStatus,
+    p_document_status: routing.documentStatus,
+    p_actor: WORKER_ACTOR_ID,
+  });
+  if (rpcError) throw rpcError;
+  if (!data?.id) return { outcome: "skipped", status: "validating" };
+  log("document validated", {
+    orgId,
+    documentId,
+    issues: issues.map((i) => i.code),
+    status: routing.documentStatus,
+    recordStatus: routing.recordStatus,
+  });
+  return { outcome: "done", status: routing.documentStatus };
 }
 
 /** Stage 2. Returns "validating" on success, or a terminal result. */
@@ -260,17 +304,16 @@ export async function processDocument(
     status = next;
   }
 
-  for (const [from, to] of STUB_STEPS) {
-    if (from !== status) continue;
-    await sleep(stepMs);
-    if (!(await transition(db, orgId, documentId, [from], to))) {
-      log("document moved concurrently; stopping", { orgId, documentId, expected: from });
-      return { outcome: "skipped", status };
-    }
-    status = to;
-    log("document status", { orgId, documentId, status });
+  if (status === "validating") {
+    const { data: fresh } = await db
+      .from("documents")
+      .select("sha256")
+      .eq("id", documentId)
+      .eq("org_id", orgId)
+      .single();
+    return validationStage(payload, fresh?.sha256 ?? null, deps);
   }
-  return { outcome: "done", status };
+  return { outcome: "skipped", status };
 }
 
 /** After the last BullMQ attempt fails: record the failure on the document (if it's still in flight). */
