@@ -1,6 +1,7 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { DocumentStatus } from "@/lib/documents/status";
+import type { Database } from "@/lib/supabase/database.types";
 
 export interface DocumentRow {
   id: string;
@@ -102,4 +103,32 @@ export async function listDocumentPages(orgId: string, documentId: string): Prom
     source: p.source,
     ocrConfidence: p.ocr_confidence === null ? null : Number(p.ocr_confidence),
   }));
+}
+
+export type RecordRow = Database["public"]["Tables"]["records"]["Row"];
+export type LineItemRow = Database["public"]["Tables"]["line_items"]["Row"];
+
+export interface DocumentRecord {
+  record: RecordRow;
+  lineItems: LineItemRow[];
+  entityName: string | null;
+}
+
+/** The document's extracted record with line items (RLS: members of the org). */
+export async function getDocumentRecord(orgId: string, documentId: string): Promise<DocumentRecord | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("records")
+    .select("*, entity:entities(name), line_items(*)")
+    .eq("org_id", orgId)
+    .eq("document_id", documentId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const { entity, line_items, ...record } = data;
+  return {
+    record,
+    entityName: entity?.name ?? null,
+    lineItems: [...line_items].sort((a, b) => a.position - b.position),
+  };
 }

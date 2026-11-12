@@ -40,6 +40,7 @@ test("upload a PDF and watch it reach the final status live", async ({ page }) =
   expect(await page.evaluate(() => (window as unknown as { marker?: boolean }).marker)).toBe(true);
 
   await row.getByRole("link", { name: "sample-invoice-3-pages.pdf" }).click();
+  await page.getByRole("tab", { name: "Preview" }).click();
   await expect(page.getByRole("navigation", { name: "Pages" }).getByRole("button")).toHaveCount(3);
   await page.getByRole("button", { name: "Page 3 of 3" }).click();
   await expect(page.getByText("Page 3 of 3", { exact: true })).toBeVisible();
@@ -74,4 +75,40 @@ test("a scanned PDF is OCR'd and its text shown per page", async ({ page }) => {
   await expect(pages.first().getByText(/^OCR · \d+%$/)).toBeVisible();
   await expect(pages.first()).toContainText("Brightline Plumbing");
   await expect(pages.nth(2)).toContainText("Page 3 of 3");
+});
+
+test("AI-extracted fields appear on the document with confidence", async ({ page }) => {
+  await page.goto("/signup");
+  await page.getByLabel("Full name").fill("Ari Extract");
+  await page.getByLabel("Work email").fill(`extract-${Date.now()}@example.test`);
+  await page.getByLabel("Password").fill("correct-horse-9");
+  await page.getByRole("button", { name: "Sign up free" }).click();
+  await page.getByLabel("Organization name").fill("Extract Co");
+  await page.getByText("Properties", { exact: true }).click();
+  await page.getByRole("button", { name: "Create organization" }).click();
+  await expect(page).toHaveURL(/\/onboarding\/invite$/);
+
+  // A property the invoice's "Bill to" line should match.
+  await page.goto("/app/entities");
+  await page.getByRole("button", { name: "Add property" }).first().click();
+  await page.getByLabel("Property name").fill("12 Elm Street");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByRole("heading", { name: "12 Elm Street" })).toBeVisible();
+
+  await page.goto("/app/documents");
+  await page
+    .locator("input[type=file]")
+    .setInputFiles(path.join(__dirname, "../fixtures/pdf/digital-invoice.pdf"));
+  const row = page.getByRole("row", { name: /digital-invoice\.pdf/ });
+  await expect(row).toContainText("Ready", { timeout: 30_000 });
+  await expect(row).toContainText("12 Elm Street"); // entity matched from the invoice
+
+  await row.getByRole("link", { name: "digital-invoice.pdf" }).click();
+  const data = page.getByRole("tabpanel");
+  await expect(page.getByRole("tab", { name: "Extracted data" })).toHaveAttribute("aria-selected", "true");
+  const field = (label: string) => data.getByText(label, { exact: true }).locator("xpath=ancestor::div[1]");
+  await expect(field("Supplier")).toContainText("Brightline Plumbing Co.");
+  await expect(field("Invoice number")).toContainText("INV-2041");
+  await expect(field("Total")).toContainText("$1,260.57");
+  await expect(field("Total")).toContainText(/\d+%/);
 });

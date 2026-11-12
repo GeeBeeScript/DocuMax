@@ -41,8 +41,9 @@ export function DocumentStatusPanel({
     (next) => {
       setAnnouncement(documentsCopy.live(fileName, DOCUMENT_STATUS_META[next.status].label));
       // Re-fetch server-rendered parts when there's something new to show: extracted pages land with
-      // `analyzing`; final statuses bring page count / errors.
-      if (["analyzing", "ready", "needs_review", "failed"].includes(next.status)) router.refresh();
+      // `analyzing`, the extracted record with `validating`; final statuses bring page count / errors.
+      if (["analyzing", "validating", "ready", "needs_review", "failed"].includes(next.status))
+        router.refresh();
     },
   );
 
