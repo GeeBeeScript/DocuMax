@@ -167,6 +167,17 @@ Implemented by `routeRecord` (`lib/validation/index.ts`) and stored by `save_val
 - Members and viewers can open the review screen read-only; only owner/admin/reviewer can decide (enforced by the
   database functions).
 
+## CSV imports (Phase 9)
+
+Records can also arrive from a CSV (`/app/data`): the browser uploads the file to `{org}/imports/`, the app reads its
+header and suggests a column mapping (`lib/import/mapping.ts`: synonyms + the org's last mapping; an exported file
+maps itself), the preview validates the first 50 rows live with `lib/import/rows.ts`, and `import-csv` (worker)
+validates every row the same way. Valid rows become records (`source = 'import'`) and then go through **Stage 3–4
+exactly like extracted ones** (`lib/validation`: duplicates — including other rows of the same file — missing
+fields, totals…), so they land in the review queue; with "approve on import" (reviewers) only issue-free records are
+approved. Invalid rows are never inserted; the error report lists row (spreadsheet numbering), column and message.
+Dates must be ISO (`2026-10-14`); amounts are parsed by `lib/calc` (`1,260.57`, `$1,260.57`, `(12.50)`).
+
 ## Guard rails
 
 - `forOrg(db, orgId).requireRow("documents", id)` — the payload's org must own the document.

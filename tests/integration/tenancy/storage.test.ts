@@ -11,10 +11,13 @@ const WRITERS: Record<Bucket, "members" | "admins" | "worker"> = {
   reports: "worker",
 };
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+/** A file each bucket accepts (buckets restrict MIME types). */
 const file = (bucket: Bucket) =>
   bucket === "branding"
     ? new Blob([PNG], { type: "image/png" })
-    : new Blob(["%PDF-1.4 test"], { type: "application/pdf" });
+    : bucket === "imports"
+      ? new Blob(["Supplier,Total\nAcme,1.00\n"], { type: "text/csv" })
+      : new Blob(["%PDF-1.4 test"], { type: "application/pdf" });
 
 let a: TestUser, b: TestUser, viewer: TestUser, member: TestUser;
 let orgA: string, orgB: string;

@@ -3,10 +3,10 @@ import { FileChartColumn } from "lucide-react";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormAlert } from "@/components/app/form-alert";
 import { PageHeader } from "@/components/app/page-header";
+import { RealtimeRefresh } from "@/components/app/realtime-refresh";
 import { reportsCopy } from "@/content/app";
 import { MonthReportButton } from "@/features/reports/components/generate-dialogs";
 import { BatchList, ReportList } from "@/features/reports/components/report-list";
-import { ReportsLive } from "@/features/reports/components/reports-live";
 import { listBatches, listReports } from "@/features/reports/queries";
 import { canReview } from "@/lib/auth/roles";
 import { requireActiveOrg } from "@/lib/auth/session";
@@ -28,7 +28,7 @@ export default async function ReportsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <ReportsLive orgId={ctx.org.id} active={active} />
+      <RealtimeRefresh orgId={ctx.org.id} tables={["reports", "report_batches"]} active={active} />
       <PageHeader
         title={reportsCopy.title}
         description={reportsCopy.description}

@@ -7,6 +7,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { logger } from "./logger";
 import { closeBrowser, renderPdf } from "./pdf/render";
 import { batchZipJob } from "./processors/batch-zip";
+import { importCsvJob } from "./processors/import-csv";
 import { markDocumentFailed, processDocument } from "./processors/process-document";
 import { markReportFailed, renderReportJob } from "./processors/render-report";
 
@@ -144,7 +145,36 @@ zips.on("failed", (job) => {
   }
 });
 
-const workers = [health, documents, reports, zips];
+const imports = new Worker(
+  QUEUES.importCsv,
+  async (job: Job) =>
+    importCsvJob(parseJob(QUEUES.importCsv, job.data), {
+      db,
+      log: (message, meta) => logger.info(message, { jobId: job.id, ...meta }),
+    }),
+  { connection: redisConnection(), concurrency: 1 },
+);
+
+imports.on("failed", (job) => {
+  if (!job || job.attemptsMade < (job.opts.attempts ?? 1)) return;
+  try {
+    const { orgId, importId } = parseJob(QUEUES.importCsv, job.data);
+    void db
+      .from("imports")
+      .update({ status: "failed", error: "The import couldn't be completed. Try again." })
+      .eq("org_id", orgId)
+      .eq("id", importId)
+      .neq("status", "done")
+      .then(
+        ({ error }) =>
+          error && logger.error("could not mark import failed", { importId, error: error.message }),
+      );
+  } catch {
+    // invalid payload: nothing to mark
+  }
+});
+
+const workers = [health, documents, reports, zips, imports];
 
 for (const w of workers) {
   w.on("failed", (job, err) =>

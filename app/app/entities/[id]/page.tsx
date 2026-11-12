@@ -5,11 +5,11 @@ import { EmptyState } from "@/components/app/empty-state";
 import { FormAlert } from "@/components/app/form-alert";
 import { PageHeader } from "@/components/app/page-header";
 import { PillButton } from "@/components/brand/pill-button";
-import { statementsCopy } from "@/content/app";
+import { dataCopy, statementsCopy } from "@/content/app";
 import { EntityReportActions } from "@/features/reports/components/generate-dialogs";
 import { EntityStatement } from "@/features/statements/components/entity-statement";
 import { PeriodPicker } from "@/features/statements/components/period-picker";
-import { parsePeriodParams } from "@/features/statements/period-params";
+import { parsePeriodParams, periodQuery } from "@/features/statements/period-params";
 import { getStatementEntity, loadStatementRecords } from "@/features/statements/queries";
 import { buildStatement } from "@/lib/calc/statement";
 import { canReview } from "@/lib/auth/roles";
@@ -79,6 +79,19 @@ export default async function EntityPage({
       />
       <PeriodPicker basePath={`/app/entities/${entity.id}`} period={selection.period} mode={selection.mode} />
       {selection.error && <FormAlert tone="danger">{selection.error}</FormAlert>}
+      {statement.lines.length > 0 && (
+        <p className="flex gap-4 text-sm">
+          {(["csv", "xlsx"] as const).map((format) => (
+            <a
+              key={format}
+              href={`/app/exports/statement${periodQuery(selection.period, selection.mode)}&entity=${entity.id}&format=${format}`}
+              className="font-semibold underline-offset-2 hover:underline"
+            >
+              {dataCopy.entityExport[format]}
+            </a>
+          ))}
+        </p>
+      )}
       {statement.lines.length === 0 && statement.otherCurrencies.length === 0 ? (
         <EmptyState
           icon={Receipt}

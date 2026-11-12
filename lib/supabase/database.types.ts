@@ -391,6 +391,76 @@ export type Database = {
           },
         ];
       };
+      imports: {
+        Row: {
+          approve: boolean;
+          created_at: string;
+          created_by: string | null;
+          error: string | null;
+          error_report_path: string | null;
+          file_name: string;
+          id: string;
+          mapping: NonNullable<Json>;
+          org_id: string;
+          rows_failed: number;
+          rows_ok: number;
+          rows_total: number;
+          status: Database["public"]["Enums"]["import_status"];
+          storage_path: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approve?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          error?: string | null;
+          error_report_path?: string | null;
+          file_name: string;
+          id?: string;
+          mapping?: NonNullable<Json>;
+          org_id: string;
+          rows_failed?: number;
+          rows_ok?: number;
+          rows_total?: number;
+          status?: Database["public"]["Enums"]["import_status"];
+          storage_path: string;
+          updated_at?: string;
+        };
+        Update: {
+          approve?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          error?: string | null;
+          error_report_path?: string | null;
+          file_name?: string;
+          id?: string;
+          mapping?: NonNullable<Json>;
+          org_id?: string;
+          rows_failed?: number;
+          rows_ok?: number;
+          rows_total?: number;
+          status?: Database["public"]["Enums"]["import_status"];
+          storage_path?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "imports_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "imports_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       invites: {
         Row: {
           accepted_at: string | null;
@@ -553,6 +623,7 @@ export type Database = {
           entity_kind: Database["public"]["Enums"]["entity_kind"];
           footer_text: string | null;
           id: string;
+          import_mapping: NonNullable<Json>;
           logo_path: string | null;
           name: string;
           review_threshold: number;
@@ -570,6 +641,7 @@ export type Database = {
           entity_kind: Database["public"]["Enums"]["entity_kind"];
           footer_text?: string | null;
           id?: string;
+          import_mapping?: NonNullable<Json>;
           logo_path?: string | null;
           name: string;
           review_threshold?: number;
@@ -586,6 +658,7 @@ export type Database = {
           entity_kind?: Database["public"]["Enums"]["entity_kind"];
           footer_text?: string | null;
           id?: string;
+          import_mapping?: NonNullable<Json>;
           logo_path?: string | null;
           name?: string;
           review_threshold?: number;
@@ -649,10 +722,12 @@ export type Database = {
           extraction_id: string | null;
           field_confidence: NonNullable<Json>;
           id: string;
+          import_id: string | null;
           invoice_number: string | null;
           issue_date: string | null;
           min_confidence: number;
           org_id: string;
+          source: string;
           status: Database["public"]["Enums"]["record_status"];
           subtotal_cents: number | null;
           supplier_name: string | null;
@@ -677,10 +752,12 @@ export type Database = {
           extraction_id?: string | null;
           field_confidence?: NonNullable<Json>;
           id?: string;
+          import_id?: string | null;
           invoice_number?: string | null;
           issue_date?: string | null;
           min_confidence: number;
           org_id: string;
+          source?: string;
           status?: Database["public"]["Enums"]["record_status"];
           subtotal_cents?: number | null;
           supplier_name?: string | null;
@@ -704,10 +781,12 @@ export type Database = {
           extraction_id?: string | null;
           field_confidence?: NonNullable<Json>;
           id?: string;
+          import_id?: string | null;
           invoice_number?: string | null;
           issue_date?: string | null;
           min_confidence?: number;
           org_id?: string;
+          source?: string;
           status?: Database["public"]["Enums"]["record_status"];
           subtotal_cents?: number | null;
           supplier_name?: string | null;
@@ -744,6 +823,13 @@ export type Database = {
             columns: ["extraction_id"];
             isOneToOne: false;
             referencedRelation: "extractions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "records_import_id_fkey";
+            columns: ["import_id"];
+            isOneToOne: false;
+            referencedRelation: "imports";
             referencedColumns: ["id"];
           },
           {
@@ -1086,6 +1172,7 @@ export type Database = {
           entity_kind: Database["public"]["Enums"]["entity_kind"];
           footer_text: string | null;
           id: string;
+          import_mapping: NonNullable<Json>;
           logo_path: string | null;
           name: string;
           review_threshold: number;
@@ -1162,7 +1249,15 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      finish_import_record: {
+        Args: { p_actor: string; p_approve: boolean; p_issues: Json; p_org: string; p_record: string };
+        Returns: undefined;
+      };
       has_org_role: { Args: { p_org: string; p_roles: string[] }; Returns: boolean };
+      import_records: {
+        Args: { p_actor: string; p_import: string; p_org: string; p_rows: Json };
+        Returns: string[];
+      };
       invite_preview: {
         Args: { p_token: string };
         Returns: {
@@ -1233,10 +1328,12 @@ export type Database = {
           extraction_id: string | null;
           field_confidence: NonNullable<Json>;
           id: string;
+          import_id: string | null;
           invoice_number: string | null;
           issue_date: string | null;
           min_confidence: number;
           org_id: string;
+          source: string;
           status: Database["public"]["Enums"]["record_status"];
           subtotal_cents: number | null;
           supplier_name: string | null;
@@ -1363,6 +1460,32 @@ export type Database = {
       };
       shares_org_with: { Args: { p_user: string }; Returns: boolean };
       slugify: { Args: { p_text: string }; Returns: string };
+      start_import: {
+        Args: { p_approve: boolean; p_import: string; p_mapping: Json };
+        Returns: {
+          approve: boolean;
+          created_at: string;
+          created_by: string | null;
+          error: string | null;
+          error_report_path: string | null;
+          file_name: string;
+          id: string;
+          mapping: NonNullable<Json>;
+          org_id: string;
+          rows_failed: number;
+          rows_ok: number;
+          rows_total: number;
+          status: Database["public"]["Enums"]["import_status"];
+          storage_path: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "imports";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       storage_org_id: { Args: { p_name: string }; Returns: string };
       transition_document: {
         Args: {
@@ -1429,6 +1552,7 @@ export type Database = {
       document_type: "invoice" | "receipt" | "credit_note" | "quote" | "statement" | "other";
       entity_kind: "property" | "job";
       entity_status: "active" | "archived";
+      import_status: "uploaded" | "queued" | "processing" | "done" | "failed";
       issue_severity: "error" | "warning";
       org_role: "owner" | "admin" | "reviewer" | "member" | "viewer";
       page_source: "text_layer" | "ocr";
@@ -1580,6 +1704,7 @@ export const Constants = {
       document_type: ["invoice", "receipt", "credit_note", "quote", "statement", "other"],
       entity_kind: ["property", "job"],
       entity_status: ["active", "archived"],
+      import_status: ["uploaded", "queued", "processing", "done", "failed"],
       issue_severity: ["error", "warning"],
       org_role: ["owner", "admin", "reviewer", "member", "viewer"],
       page_source: ["text_layer", "ocr"],
