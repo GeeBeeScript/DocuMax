@@ -52,3 +52,4 @@ supabase/.branches
 
 # PDF template previews (npm run pdf:preview)
 .preview/
+.lighthouseci/

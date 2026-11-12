@@ -1,0 +1,103 @@
+# CI: every push and pull request. Deploy steps live in deploy.yml (main only, need secrets).
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit + component tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci
+      - run: npm run check
+      - name: Dependency audit (high/critical in production deps; allowlist with reasons in audit-ci.jsonc)
+        run: npx audit-ci@7 --config audit-ci.jsonc
+
+  integration:
+    name: Integration (local Supabase + Redis)
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci
+      - name: Start Supabase (only the services the app uses)
+        run: npx supabase start -x studio,logflare,vector,imgproxy,edge-runtime,postgres-meta,supavisor
+      - run: ./scripts/ci-env.sh
+      - run: npm run test:integration
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx supabase start -x studio,logflare,vector,imgproxy,edge-runtime,postgres-meta,supavisor
+      - run: ./scripts/ci-env.sh
+      - run: npm run build
+      - name: Start the app
+        run: (RATE_LIMIT_DISABLED=1 npm start -- -p 3000 > next.log 2>&1 &) && npx wait-on -t 60000 http://localhost:3000
+      - name: Playwright (starts the worker itself)
+        run: npx playwright test --trace retain-on-failure
+        env: { E2E_BASE_URL: "http://localhost:3000" }
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          retention-days: 7
+          path: |
+            test-results
+            next.log
+
+  slow:
+    name: Slow tests (real OCR + PDF rendering)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:slow
+
+  lighthouse:
+    name: Lighthouse budgets (marketing pages)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
+      - run: npm ci
+      - name: Build (marketing pages need no backend)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      - run: npx @lhci/cli@0.15.1 autorun
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
