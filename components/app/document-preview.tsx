@@ -22,14 +22,18 @@ export function DocumentPreview({
   mimeType,
   fileName,
   labels,
+  initialPage,
 }: {
   url: string | null;
   mimeType: string;
   fileName: string;
   labels: DocumentPreviewLabels;
+  /** PDFs: page to open on (e.g. where a flagged value is printed). */
+  initialPage?: number;
 }) {
   if (!url) return <p className="p-6 text-sm text-danger">{labels.error}</p>;
-  if (mimeType === "application/pdf") return <PdfViewer url={url} labels={labels} />;
+  if (mimeType === "application/pdf")
+    return <PdfViewer url={url} labels={labels} initialPage={initialPage} />;
   if (BROWSER_IMAGES.includes(mimeType)) return <ImageViewer url={url} alt={fileName} labels={labels} />;
   return <p className="p-6 text-sm text-muted-foreground">{labels.unavailable}</p>;
 }

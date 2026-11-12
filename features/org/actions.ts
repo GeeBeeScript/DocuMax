@@ -21,6 +21,7 @@ import {
   InviteIdSchema,
   InviteMemberSchema,
   MembershipIdSchema,
+  ReviewSettingsSchema,
   SetActiveOrgSchema,
 } from "./schema";
 
@@ -187,4 +188,26 @@ export async function acceptInvite(input: unknown): Promise<ActionResult> {
   }
   revalidatePath("/app", "layout");
   redirect("/app");
+}
+
+/** Review threshold + auto-approve (owners/admins; the organizations update policy enforces it again). */
+export async function updateReviewSettings(input: unknown): Promise<ActionResult> {
+  const parsed = ReviewSettingsSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const ctx = await requireActiveOrg();
+  if (!canManageMembers(ctx.role)) return fail(FORBIDDEN);
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("organizations")
+    .update({
+      review_threshold: parsed.data.thresholdPercent / 100,
+      auto_approve: parsed.data.autoApprove,
+    })
+    .eq("id", ctx.org.id)
+    .select("id");
+  if (error) return dbError(error);
+  if (!data.length) return fail(FORBIDDEN);
+  revalidatePath("/app", "layout");
+  return ok();
 }

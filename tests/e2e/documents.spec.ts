@@ -35,8 +35,8 @@ test("upload a PDF and watch it reach the final status live", async ({ page }) =
   );
 
   const row = page.getByRole("row", { name: /sample-invoice-3-pages\.pdf/ });
-  await expect(row).toContainText("Ready", { timeout: 30_000 });
-  // Status arrived live — the page never reloaded.
+  await expect(row).toContainText("Needs review", { timeout: 30_000 });
+  // Status arrived live — the page never reloaded. (The mock model reads at 60% confidence → review.)
   expect(await page.evaluate(() => (window as unknown as { marker?: boolean }).marker)).toBe(true);
 
   await row.getByRole("link", { name: "sample-invoice-3-pages.pdf" }).click();
@@ -66,7 +66,7 @@ test("a scanned PDF is OCR'd and its text shown per page", async ({ page }) => {
   const scanned = path.join(__dirname, "../fixtures/pdf/scanned-invoice-3-pages.pdf");
   await page.locator("input[type=file]").setInputFiles(scanned);
   const row = page.getByRole("row", { name: /scanned-invoice-3-pages\.pdf/ });
-  await expect(row).toContainText("Ready", { timeout: 60_000 });
+  await expect(row).toContainText("Needs review", { timeout: 60_000 });
 
   await row.getByRole("link", { name: "scanned-invoice-3-pages.pdf" }).click();
   await page.getByRole("tab", { name: "Extracted text" }).click();
@@ -100,7 +100,7 @@ test("AI-extracted fields appear on the document with confidence", async ({ page
     .locator("input[type=file]")
     .setInputFiles(path.join(__dirname, "../fixtures/pdf/digital-invoice.pdf"));
   const row = page.getByRole("row", { name: /digital-invoice\.pdf/ });
-  await expect(row).toContainText("Ready", { timeout: 30_000 });
+  await expect(row).toContainText("Needs review", { timeout: 30_000 });
   await expect(row).toContainText("12 Elm Street"); // entity matched from the invoice
 
   await row.getByRole("link", { name: "digital-invoice.pdf" }).click();

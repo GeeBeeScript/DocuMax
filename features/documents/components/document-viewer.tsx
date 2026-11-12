@@ -9,7 +9,12 @@ import { documentsCopy } from "@/content/app";
  * Component). It also pins the first signed URL: page refreshes mint a new URL each time, and swapping it
  * would reload the PDF for nothing — the file never changes.
  */
-export function DocumentViewer(props: { url: string | null; mimeType: string; fileName: string }) {
+export function DocumentViewer(props: {
+  url: string | null;
+  mimeType: string;
+  fileName: string;
+  initialPage?: number;
+}) {
   const [url] = useState(props.url);
   return <DocumentPreview {...props} url={url} labels={documentsCopy.preview} />;
 }

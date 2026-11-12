@@ -1,4 +1,13 @@
-import { Building2, FileText, HardHat, LayoutGrid, Users } from "lucide-react";
+import {
+  Building2,
+  ClipboardCheck,
+  FileText,
+  HardHat,
+  History,
+  LayoutGrid,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
 import type { EntityKind, EntityLabels } from "@/lib/entities/labels";
 import type { OrgRole } from "@/lib/auth/roles";
 import type { LucideIcon } from "lucide-react";
@@ -12,6 +21,8 @@ export interface AppNavItem {
   icon: LucideIcon;
   /** Overrides `icon` per entity kind. */
   iconByKind?: Record<EntityKind, LucideIcon>;
+  /** Only shown to these roles (all members when omitted). */
+  roles?: readonly OrgRole[];
 }
 
 export const appNav: AppNavItem[] = [
@@ -23,7 +34,15 @@ export const appNav: AppNavItem[] = [
     iconByKind: { property: Building2, job: HardHat },
   },
   { label: "Documents", href: "/app/documents", icon: FileText },
+  { label: "Review", href: "/app/review", icon: ClipboardCheck },
   { label: "Team", href: "/app/settings/members", icon: Users },
+  {
+    label: "Review settings",
+    href: "/app/settings/review",
+    icon: SlidersHorizontal,
+    roles: ["owner", "admin"],
+  },
+  { label: "Audit log", href: "/app/settings/audit", icon: History, roles: ["owner", "admin"] },
 ];
 
 export const roleMeta: Record<OrgRole, { label: string; description: string }> = {
@@ -238,7 +257,8 @@ export const documentsCopy = {
       title: "No extracted data yet",
       description: "Fields appear here once the AI has read the document.",
     },
-    readOnlyNote: "Read-only for now — reviewing and correcting fields arrives with the review queue.",
+    readOnlyNote: "Read-only here — open it in Review to correct, approve or reject.",
+    openInReview: "Open in Review",
     fields: {
       documentType: "Document type",
       supplier: "Supplier",
@@ -298,4 +318,235 @@ export const documentsCopy = {
     },
     lowConfidence: "Low OCR confidence — check this page against the preview.",
   },
+};
+
+export const reviewCopy = {
+  title: "Review",
+  description:
+    "Check what the AI read, fix anything that's off, and approve. Errors first, then oldest first.",
+  queue: {
+    caption: "Records awaiting review",
+    columns: {
+      document: "Document",
+      supplier: "Supplier",
+      entity: (singular: string) => singular,
+      total: "Total",
+      confidence: "Confidence",
+      issues: "Issues",
+    },
+    clean: "No issues",
+    countsLabel: "Filter by issue",
+    all: (n: number) => `All (${n})`,
+    cleanFilter: "Clean",
+    filters: {
+      legend: "Filters",
+      entity: (singular: string) => singular,
+      anyEntity: (plural: string) => `All ${plural.toLowerCase()}`,
+      supplier: "Supplier",
+      supplierPlaceholder: "Search suppliers",
+      confidence: "Confidence",
+      anyConfidence: "Any confidence",
+      lowConfidence: "Below threshold",
+      okConfidence: "At or above threshold",
+      apply: "Apply",
+      clear: "Clear filters",
+    },
+    showing: (shown: number, total: number) =>
+      shown === total ? `${total} awaiting review` : `${shown} of ${total} awaiting review`,
+    empty: {
+      title: "Nothing to review",
+      description: "New documents land here when they need a look. Enjoy the quiet.",
+    },
+    noMatches: {
+      title: "No records match these filters",
+      description: "Clear the filters to see the whole queue.",
+    },
+    bulk: {
+      button: (n: number) => `Approve ${n} clean ${n === 1 ? "item" : "items"}`,
+      confirmTitle: "Approve clean items?",
+      confirmBody: (n: number) =>
+        `${n} ${n === 1 ? "record has" : "records have"} no issues. Approving records them as checked by you.`,
+      confirm: "Approve all",
+      cancel: "Cancel",
+      done: (n: number) => `Approved ${n} ${n === 1 ? "record" : "records"}`,
+    },
+  },
+  item: {
+    back: "Review queue",
+    position: (n: number, total: number) => `${n} of ${total}`,
+    notInQueue: "Not in the queue",
+    prev: "Previous (K)",
+    next: "Next (J)",
+    document: "Document",
+    noDocument: "This record has no source document.",
+    sections: { fields: "Extracted fields", lines: "Line items", history: "History" },
+    edited: "Edited",
+    clean: "No issues — ready to approve.",
+    issueCount: (errors: number, warnings: number) =>
+      [
+        errors && `${errors} ${errors === 1 ? "error" : "errors"}`,
+        warnings && `${warnings} ${warnings === 1 ? "warning" : "warnings"}`,
+      ]
+        .filter(Boolean)
+        .join(", "),
+    fix: "Go to field",
+    viewDuplicate: "Open the other document",
+    noEntity: (singular: string) => `No ${singular.toLowerCase()}`,
+    none: "—",
+    amountHint: "e.g. 1,260.57",
+    invalidAmount: "Enter an amount like 1,260.57",
+    invalidDate: "Use the date picker or YYYY-MM-DD",
+    invalidCurrency: "Use a 3-letter code like USD",
+    invalidNumber: "Enter a number like 3.5",
+    actions: {
+      approve: "Approve",
+      reject: "Reject",
+      save: "Save corrections",
+      reopen: "Reopen",
+      unsaved: (n: number) => `${n} unsaved ${n === 1 ? "change" : "changes"}`,
+      fixErrors: "Fix the highlighted fields first.",
+    },
+    toasts: {
+      approved: "Approved",
+      rejected: "Rejected",
+      saved: "Corrections saved",
+      reopened: "Reopened for review",
+      queueDone: "That was the last one — the queue is clear.",
+    },
+    decided: {
+      approved: (who: string | null, when: string) =>
+        `Approved${who ? ` by ${who}` : " automatically"} · ${when}`,
+      rejected: (when: string) => `Rejected · ${when}`,
+      reopenHint: "Reopen it to make changes.",
+    },
+    readOnly: "You can view this record, but only reviewers can approve, reject or correct it.",
+    reason: {
+      rejectTitle: "Reject this record?",
+      rejectBody: "Say why — it's kept in the audit log.",
+      approveTitle: "Approve with errors?",
+      approveBody: "This record still has errors. Say why it's fine to approve anyway.",
+      label: "Reason",
+      placeholder: "e.g. Confirmed the total with the supplier",
+      required: "Give a reason.",
+      cancel: "Cancel",
+      reject: "Reject",
+      approve: "Approve anyway",
+    },
+    lines: {
+      caption: "Line items (editable)",
+      add: "Add line",
+      removeHeader: "Remove",
+      remove: (n: number) => `Remove line ${n}`,
+      cell: (column: string, n: number) => `${column}, line ${n}`,
+      empty: "No line items. Add them if the document lists any.",
+    },
+    shortcuts: {
+      title: "Keyboard shortcuts",
+      toggle: "Keyboard shortcuts (?)",
+      items: [
+        { keys: ["A"], label: "Approve and go to the next item" },
+        { keys: ["R"], label: "Reject (asks for a reason)" },
+        { keys: ["E"], label: "Edit — jump to the first flagged field" },
+        { keys: ["J"], label: "Next item" },
+        { keys: ["K"], label: "Previous item" },
+        { keys: ["Ctrl", "S"], label: "Save corrections" },
+        { keys: ["Esc"], label: "Leave the field (shortcuts work again)" },
+        { keys: ["?"], label: "Show or hide this list" },
+      ],
+    },
+  },
+  issues: {
+    duplicate_file: "Same file uploaded before",
+    duplicate: "Possible duplicate",
+    missing_field: "Missing field",
+    total_mismatch: "Total doesn't add up",
+    lines_mismatch: "Lines don't match subtotal",
+    line_math: "Line math is off",
+    low_confidence: "Low confidence",
+    date_suspicious: "Suspicious date",
+    no_entity: "No property or job",
+  },
+  timeline: {
+    title: "History",
+    system: "DocuMax",
+    extracted: "Extracted by AI",
+    approve: "approved",
+    reject: "rejected",
+    reopen: "reopened",
+    correct: (field: string) => `changed ${field}`,
+    lineItems: "line items",
+    lineCount: (n: number) => `${n} ${n === 1 ? "line" : "lines"}`,
+    empty: "(empty)",
+    /** Labels for other audited columns (audit log). */
+    columnLabels: {
+      status: "Status",
+      name: "Name",
+      file_name: "File",
+      page_count: "Pages",
+      attempts: "Attempts",
+      role: "Role",
+      email: "Email",
+      code: "Code",
+      address: "Address",
+      description: "Description",
+      amount_cents: "Amount",
+      approved_by: "Approved by",
+      approved_at: "Approved at",
+      min_confidence: "Lowest confidence",
+      error: "Error",
+    } as Record<string, string>,
+  },
+};
+
+export const auditCopy = {
+  title: "Audit log",
+  description: "Every change to your organization's data: who, when, and what changed.",
+  caption: "Audit log entries",
+  columns: { when: "When", who: "Who", what: "What", changes: "Changes" },
+  filters: {
+    table: "Data",
+    anyTable: "All data",
+    actor: "Person",
+    anyActor: "Everyone",
+    apply: "Apply",
+    clear: "Clear",
+  },
+  tables: {
+    organizations: "Organization",
+    memberships: "Membership",
+    invites: "Invite",
+    entities: "Property / job",
+    documents: "Document",
+    records: "Record",
+    line_items: "Line item",
+    extractions: "Extraction",
+    document_pages: "Document page",
+    validation_issues: "Validation issue",
+    review_actions: "Review action",
+  } as Record<string, string>,
+  actions: { insert: "created", update: "updated", delete: "deleted" },
+  system: "DocuMax",
+  unknownActor: "Former member",
+  older: "Older entries",
+  newest: "Back to newest",
+  empty: { title: "No entries", description: "Changes show up here as soon as they happen." },
+  more: (n: number) => `+${n} more`,
+  forbidden: "Only owners and admins can see the audit log.",
+};
+
+export const reviewSettingsCopy = {
+  title: "Review settings",
+  description: "Decide when documents need a person to look at them.",
+  threshold: {
+    label: "Confidence threshold (%)",
+    hint: "Fields the AI is less sure about than this are flagged for review.",
+    invalid: "Enter a whole number from 50 to 100.",
+  },
+  autoApprove: {
+    label: "Auto-approve clean documents",
+    hint: "Records with no issues at all are approved without a person. Everything else still goes to review.",
+  },
+  save: "Save settings",
+  saved: "Review settings saved",
+  forbidden: "Only owners and admins can change review settings.",
 };

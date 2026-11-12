@@ -49,10 +49,19 @@ function PageCanvas({
 }
 
 /** pdf.js viewer: main page plus a thumbnail strip to switch pages. Loads pdf.js only on the client. */
-export function PdfViewer({ url, labels }: { url: string; labels: PdfViewerLabels }) {
+export function PdfViewer({
+  url,
+  labels,
+  initialPage = 1,
+}: {
+  url: string;
+  labels: PdfViewerLabels;
+  /** Page to open on (clamped to the document). */
+  initialPage?: number;
+}) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [failed, setFailed] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [width, setWidth] = useState(640);
   const frame = useRef<HTMLDivElement>(null);
 
@@ -69,7 +78,10 @@ export function PdfViewer({ url, labels }: { url: string; labels: PdfViewerLabel
         const loading = pdfjs.getDocument({ url });
         task = loading;
         const loaded = await loading.promise;
-        if (!cancelled) setPdf(loaded);
+        if (!cancelled) {
+          setPdf(loaded);
+          setPage((p) => Math.min(Math.max(1, p), loaded.numPages));
+        }
       } catch {
         if (!cancelled) setFailed(true);
       }

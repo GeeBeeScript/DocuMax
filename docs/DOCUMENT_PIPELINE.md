@@ -136,25 +136,42 @@ All arithmetic uses `lib/calc`. Normalization (supplier names, invoice numbers) 
 
 ## Stage 4 — Routing
 
-- Any `error` or `warning` issue, or `min_confidence < threshold` → record `needs_review`, document `needs_review`.
-- Otherwise → document `ready`, record stays `needs_review` **unless** the org enabled auto-approve
-  (off by default), in which case it is `approved` by the system actor.
+Implemented by `routeRecord` (`lib/validation/index.ts`) and stored by `save_validation()`:
+
+- Any issue (error or warning) → record and document `needs_review`. Low confidence is itself an issue
+  (`low_confidence`), so a required field below the threshold always routes to review.
+- No issues → document `ready`; the record stays `needs_review` (it still appears in the queue, where "Approve N clean
+  items" clears it in one go) **unless** the org enabled auto-approve in Review settings, in which case it is
+  `approved` by the system (a review action with no actor and the reason "Auto-approved: no issues found").
 
 ## Review (Phase 6)
 
-- Queue: records in `needs_review`, sorted by severity then age; filters by entity, supplier, issue code.
-- Review screen: document preview (left) + field form with confidence pills and issue banners (right); keyboard
-  shortcuts (`A` approve, `R` reject, `J/K` next/prev, `E` edit field).
-- Corrections re-run validation instantly (same `lib/validation` code client- and server-side).
-- Every approve/reject/correct writes `review_actions` (with optional reason) and is captured by the audit trigger.
+- **Queue** (`/app/review`): records awaiting review — errors first, then warnings, then clean; oldest first within
+  each. Filters live in the URL (issue code or "clean", entity, supplier, confidence below/above threshold) and work
+  without JavaScript; chips show how many records carry each code. The oldest 500 records are loaded and filtered in
+  app code (`features/review/queue.ts`). Reviewers can bulk-approve the clean records in view (≤ 200 per call).
+- **Review screen** (`/app/review/[id]`): document preview (left, opened on the page where the first flagged value is
+  printed — `features/review/highlight.ts`) | field form with confidence pills, issue banners (one per code, with
+  "Go to field" / "Open the other document"), editable line items, and the record's history.
+- **Live re-validation:** the form runs the same `lib/validation` rules in the browser on every keystroke, with a
+  context the server provides (today, threshold, duplicate candidates, same-file uploads). Corrected fields count as
+  fully confident. Duplicate candidates are loaded for the stored values, so a duplicate created by an edit is only
+  found when the server re-validates on save — the server's result is the one stored.
+- **Decisions:** Approve (`A`) — a clean item is one keystroke and moves to the next item; with remaining errors it
+  asks for a reason. Reject (`R`) always asks for a reason. Save corrections (`Ctrl/⌘+S`) keeps the item open.
+  `E` jumps to the first flagged field, `J`/`K` next/previous (following the queue's filters), `Esc` leaves a field,
+  `?` lists the shortcuts. Letters never fire while typing in a field or while a dialog is open.
+- Every approve/reject/correct/reopen writes `review_actions` (who, before/after, reason) and the record change is
+  captured by the audit trigger. Owners/admins see the org-wide log at `/app/settings/audit` (filter by data type and
+  person, before → after per column); everyone sees each record's history on its review screen.
+- Members and viewers can open the review screen read-only; only owner/admin/reviewer can decide (enforced by the
+  database functions).
 
-## Stub stages and guard rails
-
-Stage 1 is real since Phase 4. Until Phases 5–6 land, `worker/processors/process-document.ts` walks
-`analyzing → validating → ready` with `STUB_STEP_MS` pauses (default 800 ms). Guard rails that stay:
+## Guard rails
 
 - `forOrg(db, orgId).requireRow("documents", id)` — the payload's org must own the document.
 - The file must exist in Storage, else the document fails with a clear message.
-- Every step is `transition_document(org, doc, [from], to)`: a stale or duplicate job gets `null` back and stops,
-  so retries are idempotent. Job ids are `{documentId}-{attempts}` (one job per attempt).
+- Every step is status-checked in the database (`transition_document`, `save_*`): a stale or duplicate job gets
+  `null` back and stops, so retries are idempotent and resume at the stage the document is in. Job ids are
+  `{documentId}-{attempts}` (one job per attempt).
 - After the last BullMQ attempt fails, `markDocumentFailed` records the error on the document.

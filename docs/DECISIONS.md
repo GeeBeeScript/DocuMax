@@ -158,3 +158,27 @@ open model keeps the option to self-host. The owner chose the open model after a
 **Trade-offs:** 5–30 s per document (it reasons; ~4K output tokens), occasional schema retries; results vary
 between runs, so changes to the prompt or model must be judged on repeated eval runs. Claude Sonnet 5.5 was not
 measured (no credit) — it remains one setting away (`AI_PROVIDER=anthropic` or `AI_MODEL=anthropic/claude-sonnet-5.5`).
+
+## ADR-019 — Review rules: reasons, decided records, live validation
+
+**Status:** Accepted (2026-11-12)
+Decisions made while building Phase 6 that the docs didn't fix:
+
+- **Approving a record that still has errors needs a reason** (reject always does). Warnings never block. Errors are
+  the cases where the numbers are probably wrong (missing field, total mismatch, duplicate), so an override must be
+  explained in the audit trail. A clean record approves with one keystroke.
+- **Decided records are frozen until reopened.** Corrections to an approved/rejected record are refused; `reopen`
+  (also audited) puts it back in the queue. Reports built later (Phase 7+) can rely on approved data not drifting.
+- **One database function per review step** (`review_record`) instead of client-side table updates: role check,
+  per-field `review_actions`, confidence reset, issue replacement and document status change happen in one
+  transaction, and clients have no update grant on `records`.
+- **Live validation runs in the browser with server-provided context; the server re-validates on save** and its
+  result is stored. Duplicate candidates are loaded for the stored values only (a duplicate introduced by an edit
+  surfaces on save).
+- **Line items are replaced as a set** on correction and recorded as one `line_items` review action (before/after
+  arrays), rather than per-cell actions.
+- **Clean records stay in the queue unless auto-approve is on** (off by default, an org setting). "Approve N clean
+  items" is the fast path; it re-checks in the database that each record has no unresolved issues.
+- **Preview page highlight is a text search**, since fields aren't traced to page coordinates: the preview opens on
+  the page that prints the first flagged value (amounts with or without thousands separators), else page 1.
+- **Worker writes show as "DocuMax"** in history and the audit log (`SYSTEM_ACTOR_ID`, `lib/audit/actors.ts`).

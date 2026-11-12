@@ -205,3 +205,42 @@ describe("revokeInvite / setActiveOrg", () => {
     expect((await actions.setActiveOrg({ orgId: otherOrgId })).ok).toBe(false);
   });
 });
+
+describe("updateReviewSettings", () => {
+  const settings = async () =>
+    (await admin.from("organizations").select("review_threshold, auto_approve").eq("id", orgId).single())
+      .data;
+
+  it("admins change the threshold and auto-approve; the change is audited", async () => {
+    as(adminUser);
+    expect(await actions.updateReviewSettings({ thresholdPercent: 90, autoApprove: true })).toEqual({
+      ok: true,
+      data: undefined,
+    });
+    expect(await settings()).toEqual({ review_threshold: 0.9, auto_approve: true });
+    const { data } = await admin
+      .from("audit_log")
+      .select("actor_id, diff")
+      .eq("table_name", "organizations")
+      .eq("row_id", orgId)
+      .order("id", { ascending: false })
+      .limit(1)
+      .single();
+    expect(data).toMatchObject({
+      actor_id: adminUser.id,
+      diff: { review_threshold: 0.9, auto_approve: true },
+    });
+    await actions.updateReviewSettings({ thresholdPercent: 85, autoApprove: false });
+  });
+
+  it("members are refused and out-of-range values rejected", async () => {
+    const settingsMember = await createUser("act-settings-member");
+    await addMember(orgId, settingsMember, "member");
+    as(settingsMember);
+    expect((await actions.updateReviewSettings({ thresholdPercent: 70, autoApprove: true })).ok).toBe(false);
+    as(owner);
+    expect((await actions.updateReviewSettings({ thresholdPercent: 30, autoApprove: false })).ok).toBe(false);
+    expect(await settings()).toEqual({ review_threshold: 0.85, auto_approve: false });
+    await cleanup([], [settingsMember]);
+  });
+});
