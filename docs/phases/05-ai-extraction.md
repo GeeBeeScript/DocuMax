@@ -29,3 +29,30 @@
 - Schema tests against recorded outputs (valid, partially null, malformed → retry path).
 - `map-extraction` unit tests (cents parsing, confidence combination, entity matching).
 - AI calls mocked in CI; eval script run manually / nightly.
+
+## Status (2026-11-14): built, real-model eval pending
+
+Not marked done: the main acceptance criterion needs a run against a real model, which needs an API key in the
+environment (none is configured yet).
+
+- [x] `lib/ai/extraction-schema.ts` (two layers, `SCHEMA_VERSION` 1), `lib/ai/prompt.ts`, `lib/ai/extract.ts`
+      (structured output, retries with validation feedback, usage incl. failed attempts, refusal handling).
+- [x] `lib/pipeline/map-extraction.ts` (cents, combined confidence, entity matching) + hardened `parseToCents`.
+- [x] Migration `20261114090000_extractions_records.sql`; `save_extraction()`; isolation suite covers all three
+      tables (failed until seeders were registered).
+- [x] Worker stage 2 (`analyzing → validating`), cost/latency logging; validation still stubbed (Phase 6).
+- [x] Read-only "Extracted data" view with `ConfidencePill`; list shows the matched property/job without reload.
+- [x] **Switching provider/model needs no code change** — `AI_PROVIDER` / `AI_MODEL` / `AI_EFFORT` only.
+- [x] **Model output never feeds arithmetic** — amounts are strings parsed by `lib/calc` (tests).
+- [x] Tests: schema on recorded outputs (valid / partially null / invalid / malformed → retry), `map-extraction`
+      unit tests, mocked AI in CI (unit 255, integration 249), E2E with the dev model (13).
+- [ ] **≥ 90% of fixtures correct** — `scripts/eval-extraction.ts` + 9 labeled fixtures are ready; harness verified
+      with the dev model (5/9 — expected for a regex stand-in, not a quality measure). Run with a real key:
+      `npm run eval:extraction`.
+
+## To finish
+
+1. Add an Anthropic API key to the environment (Settings → environment → network secrets for
+   `api.anthropic.com`, header `x-api-key`), or `ANTHROPIC_API_KEY` in `.env.local` locally.
+2. `npm run eval:extraction` (≈ 9 model calls). If < 90%, iterate on `lib/ai/prompt.ts` against the eval.
+3. Record the result here and mark the phase done.

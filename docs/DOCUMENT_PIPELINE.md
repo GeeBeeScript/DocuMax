@@ -35,13 +35,25 @@ photo ≈ 0.9 s. All key strings (supplier, invoice no., dates, tax id, totals) 
 
 ## Stage 2 — AI extraction (Phase 5)
 
-- Model: `extractionModel()` from `lib/ai/provider.ts` (provider/model via env). Use `generateObject` (or the AI
-  SDK's structured output API) with the zod schema below.
+- Model: `extractionModel()` from `lib/ai/provider.ts` (provider/model via env, ADR-003). `lib/ai/extract.ts` calls
+  `generateText` with `Output.object({ schema: ModelExtraction })` — the AI SDK uses each provider's native structured
+  output (for current Claude models: `output_config.format`; they reject forced tool use).
 - Input: concatenated page text with page markers (`--- page 2 ---`), org context (entity kind, entity names/codes
   for matching, known suppliers), and the category list. If OCR confidence is low and the provider supports vision,
   page images may be attached as well.
 - The prompt instructs the model to **copy values as printed** and never compute missing totals.
-- Temperature 0. Up to 2 retries on schema failure; then status `failed` with the validation error.
+- **No sampling parameters** (no `temperature`): current Claude models reject them, and the output is constrained by
+  the schema instead (ADR-015). Anthropic requests opt into server-side refusal fallbacks (`fallbacks: "default"`);
+  optional `AI_EFFORT` sets reasoning effort.
+- Two schema layers (ADR-015): the model fills `ModelExtraction` (plain JSON types only, so every provider accepts
+  it); the answer must then pass the strict `InvoiceExtraction` (ISO dates, ISO 4217, confidence 0–1). Up to 2
+  retries, each with the validation errors fed back; then the document fails with a readable message. A refusal
+  (after fallbacks) fails at once. Network/rate-limit/5xx errors are rethrown so BullMQ retries the job, which
+  resumes at stage 2 without re-running OCR.
+- Every extraction logs provider, model, attempts, latency and tokens (worker log + `extractions` row); tokens of
+  failed attempts are counted too. No document text in logs.
+- `AI_PROVIDER=mock` swaps in a deterministic regex-based dev model (`lib/ai/dev-model.ts`) for local development and
+  E2E without an API key; it reports confidence 0.6 so everything routes to review, and is refused in production.
 
 ### Extraction schema (`lib/ai/extraction-schema.ts`, `schema_version` = 1)
 
@@ -85,8 +97,24 @@ Amounts are strings so the model never "rounds"; `parseToCents` converts them de
 
 ### Confidence
 
-Final confidence per field = `min(model confidence, ocr factor)` where `ocr factor` = page OCR confidence for
-OCR-sourced pages (1.0 for text-layer pages). `records.min_confidence` = minimum over required fields.
+Final confidence per field = `min(model confidence, ocr factor)`. Fields aren't traced to pages, so the
+`ocr factor` is the **lowest** OCR confidence among the document's OCR'd pages (1.0 when every page has a text
+layer) — conservative by design. `records.min_confidence` = minimum over required fields (supplier name, issue date,
+total, currency; plus invoice number for invoices). An amount the model returned that `parseToCents` can't parse is
+stored as null with confidence 0.
+
+### Mapping and entity matching (`lib/pipeline/map-extraction.ts`)
+
+Amounts → cents via `lib/calc/money.ts` (`parseToCents` handles "1,234.56", "1.234,56", "1260.57 USD", "(12.50)",
+"12.50-"). Quantities and tax rates stay decimal strings (never floats). The entity hint matches an active
+property/job by code (exact or contained), else by name/address similarity ≥ 0.8 (normalized, street abbreviations
+expanded, tolerant of OCR slips); near-ties return no match. An entity the user picked at upload always wins.
+
+### Evaluation
+
+`npm run eval:extraction` runs stage 1 + 2 on the labeled fixtures (`tests/fixtures/labels/extraction.json`) with
+the configured provider and scores the required fields; the bar is ≥ 90% of fixtures fully correct. It calls the
+real API (costs money): run manually or nightly, never in CI. `AI_PROVIDER=mock` checks the harness for free.
 
 ## Stage 3 — Validation (Phase 6, `lib/validation/*`, pure functions)
 
