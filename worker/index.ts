@@ -1,11 +1,14 @@
 import "./load-env";
 import { Worker, type Job } from "bullmq";
-import { QUEUES, parseJob, redisConnection } from "@/lib/queue";
+import { QUEUES, enqueue, parseJob, redisConnection } from "@/lib/queue";
 import { extractionModel, extractionModelInfo, extractionProviderOptions } from "@/lib/ai/provider";
 import { createTesseractEngine } from "@/lib/pipeline/ocr";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { logger } from "./logger";
+import { closeBrowser, renderPdf } from "./pdf/render";
+import { batchZipJob } from "./processors/batch-zip";
 import { markDocumentFailed, processDocument } from "./processors/process-document";
+import { markReportFailed, renderReportJob } from "./processors/render-report";
 
 /**
  * DocuMax background worker. Runs outside Next.js (long OCR / AI / PDF jobs).
@@ -83,7 +86,65 @@ documents.on("failed", (job, err) => {
   });
 });
 
-const workers = [health, documents];
+const enqueueZip = async (payload: { orgId: string; batchId: string }) => {
+  await enqueue(QUEUES.batchZip, payload, `zip-${payload.batchId}`);
+};
+const REPORT_WORKERS = Number(process.env.REPORT_WORKERS ?? 2);
+
+const reports = new Worker(
+  QUEUES.renderReport,
+  async (job: Job) =>
+    renderReportJob(parseJob(QUEUES.renderReport, job.data), {
+      db,
+      render: renderPdf,
+      enqueueZip,
+      log: (message, meta) => logger.info(message, { jobId: job.id, ...meta }),
+    }),
+  // One shared Chromium; each job gets its own context.
+  { connection: redisConnection(), concurrency: REPORT_WORKERS },
+);
+
+reports.on("failed", (job) => {
+  if (!job || job.attemptsMade < (job.opts.attempts ?? 1)) return;
+  try {
+    const payload = parseJob(QUEUES.renderReport, job.data);
+    markReportFailed(db, payload, "The PDF couldn't be generated. Try again.", { enqueueZip }).catch(
+      (e: Error) => logger.error("could not mark report failed", { jobId: job.id, error: e.message }),
+    );
+  } catch {
+    // invalid payload: nothing to mark
+  }
+});
+
+const zips = new Worker(
+  QUEUES.batchZip,
+  async (job: Job) =>
+    batchZipJob(parseJob(QUEUES.batchZip, job.data), {
+      db,
+      log: (message, meta) => logger.info(message, { jobId: job.id, ...meta }),
+    }),
+  { connection: redisConnection(), concurrency: 1 },
+);
+
+zips.on("failed", (job) => {
+  if (!job || job.attemptsMade < (job.opts.attempts ?? 1)) return;
+  try {
+    const { orgId, batchId } = parseJob(QUEUES.batchZip, job.data);
+    void db
+      .from("report_batches")
+      .update({ status: "failed", error: "The ZIP file couldn't be created. Try again." })
+      .eq("org_id", orgId)
+      .eq("id", batchId)
+      .then(
+        ({ error }) =>
+          error && logger.error("could not mark batch failed", { batchId, error: error.message }),
+      );
+  } catch {
+    // invalid payload: nothing to mark
+  }
+});
+
+const workers = [health, documents, reports, zips];
 
 for (const w of workers) {
   w.on("failed", (job, err) =>
@@ -98,6 +159,7 @@ async function shutdown(signal: string) {
   logger.info("shutting down", { signal });
   await Promise.all(workers.map((w) => w.close()));
   await (await ocrReady).terminate();
+  await closeBrowser();
   process.exit(0);
 }
 

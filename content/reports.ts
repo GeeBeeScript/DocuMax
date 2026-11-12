@@ -16,7 +16,8 @@ export const reportCopy = {
     categoryColumns: { category: "Category", net: "Before tax", tax: "Tax", gross: "Total", share: "Share" },
     supplierColumns: { supplier: "Supplier", records: "Records", gross: "Total" },
     empty: "No approved costs in this period.",
-    splitNote: (singular: string) => `* Shared cost — the amount shown is this ${singular.toLowerCase()}'s share.`,
+    splitNote: (singular: string) =>
+      `* Shared cost — the amount shown is this ${singular.toLowerCase()}'s share.`,
   },
   summary: {
     title: "Portfolio summary",

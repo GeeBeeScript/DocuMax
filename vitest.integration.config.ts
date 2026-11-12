@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 
 /**
@@ -6,6 +7,8 @@ import { fileURLToPath } from "node:url";
  * (files share one database), generous timeouts for auth + realtime round-trips.
  */
 export default defineConfig({
+  // pdf/ templates are TSX; tsconfig keeps "jsx": "preserve" for Next.
+  plugins: [react()],
   resolve: {
     alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
   },

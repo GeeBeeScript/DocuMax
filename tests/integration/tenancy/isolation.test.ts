@@ -294,6 +294,44 @@ const SEEDERS: Record<string, Seeder> = {
     }),
     update: { percent_bp: 1 },
   },
+  report_batches: {
+    async seed(_ctx, orgId) {
+      const { data, error } = await admin
+        .from("report_batches")
+        .insert({ org_id: orgId, period_start: "2026-10-01", period_end: "2026-10-31", total: 1 })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({ org_id: orgId, period_start: "2026-10-01", period_end: "2026-10-31" }),
+    update: { status: "ready" },
+  },
+  reports: {
+    async seed(_ctx, orgId) {
+      const { data, error } = await admin
+        .from("reports")
+        .insert({
+          org_id: orgId,
+          kind: "summary",
+          period_start: "2026-10-01",
+          period_end: "2026-10-31",
+          file_name: "Summary.pdf",
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    insertPayload: (_ctx, orgId) => ({
+      org_id: orgId,
+      kind: "summary",
+      period_start: "2026-10-01",
+      period_end: "2026-10-31",
+      file_name: "Intruder.pdf",
+    }),
+    update: { status: "ready" },
+  },
   document_pages: {
     async seed(ctx, orgId) {
       const doc = await SEEDERS.documents.seed(ctx, orgId);
