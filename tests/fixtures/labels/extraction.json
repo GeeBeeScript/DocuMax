@@ -1,0 +1,113 @@
+{
+  "$comment": "Expected required fields per fixture for scripts/eval-extraction.ts. null = not printed on the document (the model must return null, not a guess). Amounts in cents.",
+  "fixtures": [
+    {
+      "file": "pdf/digital-invoice.pdf",
+      "mimeType": "application/pdf",
+      "expected": {
+        "documentType": "invoice",
+        "supplierName": "Brightline Plumbing Co.",
+        "invoiceNumber": "INV-2041",
+        "issueDate": "2026-10-14",
+        "totalCents": 126057,
+        "currency": null
+      }
+    },
+    {
+      "file": "pdf/scanned-invoice-3-pages.pdf",
+      "mimeType": "application/pdf",
+      "expected": {
+        "documentType": "invoice",
+        "supplierName": "Brightline Plumbing Co.",
+        "invoiceNumber": "INV-3307",
+        "issueDate": "2026-10-14",
+        "totalCents": 126057,
+        "currency": null
+      }
+    },
+    {
+      "file": "pdf/mixed-invoice.pdf",
+      "mimeType": "application/pdf",
+      "expected": {
+        "documentType": "invoice",
+        "supplierName": "Brightline Plumbing Co.",
+        "invoiceNumber": "INV-5120",
+        "issueDate": "2026-10-14",
+        "totalCents": 126057,
+        "currency": null
+      }
+    },
+    {
+      "file": "pdf/sample-invoice-3-pages.pdf",
+      "mimeType": "application/pdf",
+      "expected": {
+        "documentType": "invoice",
+        "supplierName": "Brightline Plumbing Co.",
+        "invoiceNumber": "INV-4001",
+        "issueDate": null,
+        "totalCents": 98100,
+        "currency": "USD"
+      }
+    },
+    {
+      "file": "pdf/euro-invoice-scanned.pdf",
+      "mimeType": "application/pdf",
+      "expected": {
+        "documentType": "invoice",
+        "supplierName": "Haustechnik Weber GmbH",
+        "invoiceNumber": "RE-2026-0815",
+        "issueDate": "2026-10-14",
+        "totalCents": 123463,
+        "currency": "EUR"
+      }
+    },
+    {
+      "file": "pdf/credit-note.pdf",
+      "mimeType": "application/pdf",
+      "expected": {
+        "documentType": "credit_note",
+        "supplierName": "Summit Supply Co.",
+        "invoiceNumber": "CN-1177",
+        "issueDate": "2026-10-30",
+        "totalCents": -9095,
+        "currency": "USD"
+      }
+    },
+    {
+      "file": "pdf/utility-bill.pdf",
+      "mimeType": "application/pdf",
+      "expected": {
+        "documentType": null,
+        "supplierName": "Springfield Water & Power",
+        "invoiceNumber": null,
+        "issueDate": "2026-11-02",
+        "totalCents": 12953,
+        "currency": "USD"
+      }
+    },
+    {
+      "file": "images/photo-receipt.jpg",
+      "mimeType": "image/jpeg",
+      "expected": {
+        "documentType": "receipt",
+        "supplierName": "Hardware Depot",
+        "invoiceNumber": "88213",
+        "issueDate": "2026-10-20",
+        "totalCents": 3084,
+        "currency": null
+      }
+    },
+    {
+      "file": "images/sample-receipt.png",
+      "mimeType": "image/png",
+      "expected": {
+        "documentType": "receipt",
+        "supplierName": "Hardware Depot",
+        "invoiceNumber": "88213",
+        "issueDate": null,
+        "totalCents": 2450,
+        "currency": null
+      }
+    }
+  ]
+}

@@ -20,7 +20,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts && prettier --write lib/supabase/database.types.ts",
     "db:reset": "supabase db reset",
-    "test:slow": "SLOW_TESTS=1 vitest run lib/pipeline"
+    "test:slow": "SLOW_TESTS=1 vitest run lib/pipeline",
+    "eval:extraction": "tsx scripts/eval-extraction.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.101",

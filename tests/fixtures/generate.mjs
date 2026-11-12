@@ -109,5 +109,55 @@ await writeFile(out("images/photo-receipt.jpg"), photo);
 const digital = await readFile(out("pdf/digital-invoice.pdf"));
 await writeFile(out("pdf/corrupt.pdf"), digital.subarray(0, Math.floor(digital.length / 3)));
 
+// 6. European-format invoice: EUR, "1.234,56" amounts, dd.mm.yyyy dates (scanned, so OCR'd)
+const euroHtml = `
+<section style="font-family:Helvetica,Arial,sans-serif;padding:48px;color:#111">
+  <h1 style="margin:0">Haustechnik Weber GmbH</h1>
+  <p style="margin:0">Industriestraße 7, 50667 Köln · USt-IdNr. DE298374651</p>
+  <h2 style="margin:28px 0 8px">Rechnung Nr. RE-2026-0815</h2>
+  <p style="margin:0">Rechnungsdatum 14.10.2026 · Fällig am 28.10.2026</p>
+  <p>Leistungsort: Objekt Lindenallee 22, Bonn</p>
+  <table style="border-collapse:collapse;width:100%;font-size:16px" cellpadding="8">
+    <tr style="border-bottom:2px solid #111"><th align="left">Beschreibung</th><th align="right">Menge</th><th align="right">Betrag</th></tr>
+    <tr><td>Heizungswartung</td><td align="right">1</td><td align="right">890,00 €</td></tr>
+    <tr><td>Ersatzteile Thermostat</td><td align="right">2</td><td align="right">147,50 €</td></tr>
+  </table>
+  <p style="text-align:right;margin-top:24px">Nettobetrag 1.037,50 €<br>MwSt. 19% 197,13 €<br><b>Gesamtbetrag 1.234,63 €</b></p>
+</section>`;
+await writeFile(out("pdf/euro-invoice-scanned.pdf"), await imagePdf(page, [await scan(page, euroHtml)]));
+
+// 7. Credit note with negative amounts (digital)
+await page.setContent(`
+<section style="font-family:Helvetica,Arial,sans-serif;padding:48px;color:#111">
+  <h1 style="margin:0">Summit Supply Co.</h1>
+  <p style="margin:0">88 Depot Road, Bayview · EIN 82-1937465</p>
+  <h2 style="margin:28px 0 8px">CREDIT NOTE CN-1177</h2>
+  <p style="margin:0">Date: October 30, 2026 · Reference invoice INV-9921</p>
+  <p>Job: J-1042 Kitchen remodel (Chen)</p>
+  <table style="border-collapse:collapse;width:100%;font-size:16px" cellpadding="8">
+    <tr style="border-bottom:2px solid #111"><th align="left">Description</th><th align="right">Qty</th><th align="right">Amount</th></tr>
+    <tr><td>Returned cabinet hinges</td><td align="right">10</td><td align="right">(85.00)</td></tr>
+  </table>
+  <p style="text-align:right;margin-top:24px">Subtotal (85.00)<br>Sales tax 7% (5.95)<br><b>Total credit -$90.95</b></p>
+</section>`);
+await writeFile(out("pdf/credit-note.pdf"), await page.pdf({ format: "A4" }));
+
+// 8. Utility bill: account number instead of an invoice number (digital)
+await page.setContent(`
+<section style="font-family:Helvetica,Arial,sans-serif;padding:48px;color:#111">
+  <h1 style="margin:0">Springfield Water &amp; Power</h1>
+  <p style="margin:0">PO Box 4400, Springfield</p>
+  <h2 style="margin:28px 0 8px">Your monthly statement</h2>
+  <p style="margin:0">Account number 0045-778812 · Statement date 2026-11-02 · Payment due 2026-11-23</p>
+  <p>Service address: 300 Oak Avenue, Unit 4</p>
+  <table style="border-collapse:collapse;width:100%;font-size:16px" cellpadding="8">
+    <tr><td>Water usage 14 kgal</td><td align="right">$61.32</td></tr>
+    <tr><td>Electricity 412 kWh</td><td align="right">$58.71</td></tr>
+    <tr><td>Service fee</td><td align="right">$9.50</td></tr>
+  </table>
+  <p style="text-align:right;margin-top:24px"><b>Amount due $129.53</b></p>
+</section>`);
+await writeFile(out("pdf/utility-bill.pdf"), await page.pdf({ format: "A4" }));
+
 await browser.close();
 console.log("fixtures written; now run: python3 tests/fixtures/encrypt.py");
