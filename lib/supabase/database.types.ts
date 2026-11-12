@@ -551,6 +551,7 @@ export type Database = {
           created_by: string | null;
           default_currency: string;
           entity_kind: Database["public"]["Enums"]["entity_kind"];
+          footer_text: string | null;
           id: string;
           logo_path: string | null;
           name: string;
@@ -567,6 +568,7 @@ export type Database = {
           created_by?: string | null;
           default_currency?: string;
           entity_kind: Database["public"]["Enums"]["entity_kind"];
+          footer_text?: string | null;
           id?: string;
           logo_path?: string | null;
           name: string;
@@ -582,6 +584,7 @@ export type Database = {
           created_by?: string | null;
           default_currency?: string;
           entity_kind?: Database["public"]["Enums"]["entity_kind"];
+          footer_text?: string | null;
           id?: string;
           logo_path?: string | null;
           name?: string;
@@ -745,6 +748,166 @@ export type Database = {
           },
           {
             foreignKeyName: "records_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      report_batches: {
+        Row: {
+          completed: number;
+          created_at: string;
+          created_by: string | null;
+          error: string | null;
+          failed: number;
+          id: string;
+          kind: Database["public"]["Enums"]["report_kind"];
+          org_id: string;
+          period_end: string;
+          period_start: string;
+          status: Database["public"]["Enums"]["batch_status"];
+          total: number;
+          updated_at: string;
+          zip_path: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          completed?: number;
+          created_at?: string;
+          created_by?: string | null;
+          error?: string | null;
+          failed?: number;
+          id?: string;
+          kind?: Database["public"]["Enums"]["report_kind"];
+          org_id: string;
+          period_end: string;
+          period_start: string;
+          status?: Database["public"]["Enums"]["batch_status"];
+          total?: number;
+          updated_at?: string;
+          zip_path?: string | null;
+        };
+        Update: {
+          completed?: number;
+          created_at?: string;
+          created_by?: string | null;
+          error?: string | null;
+          failed?: number;
+          id?: string;
+          kind?: Database["public"]["Enums"]["report_kind"];
+          org_id?: string;
+          period_end?: string;
+          period_start?: string;
+          status?: Database["public"]["Enums"]["batch_status"];
+          total?: number;
+          updated_at?: string;
+          zip_path?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_batches_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_batches_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      reports: {
+        Row: {
+          attempts: number;
+          batch_id: string | null;
+          byte_size: number | null;
+          created_at: string;
+          entity_id: string | null;
+          error: string | null;
+          file_name: string;
+          generated_by: string | null;
+          id: string;
+          kind: Database["public"]["Enums"]["report_kind"];
+          org_id: string;
+          page_count: number | null;
+          params: NonNullable<Json>;
+          period_end: string;
+          period_start: string;
+          status: Database["public"]["Enums"]["report_status"];
+          storage_path: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          batch_id?: string | null;
+          byte_size?: number | null;
+          created_at?: string;
+          entity_id?: string | null;
+          error?: string | null;
+          file_name: string;
+          generated_by?: string | null;
+          id?: string;
+          kind: Database["public"]["Enums"]["report_kind"];
+          org_id: string;
+          page_count?: number | null;
+          params?: NonNullable<Json>;
+          period_end: string;
+          period_start: string;
+          status?: Database["public"]["Enums"]["report_status"];
+          storage_path?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          attempts?: number;
+          batch_id?: string | null;
+          byte_size?: number | null;
+          created_at?: string;
+          entity_id?: string | null;
+          error?: string | null;
+          file_name?: string;
+          generated_by?: string | null;
+          id?: string;
+          kind?: Database["public"]["Enums"]["report_kind"];
+          org_id?: string;
+          page_count?: number | null;
+          params?: NonNullable<Json>;
+          period_end?: string;
+          period_start?: string;
+          status?: Database["public"]["Enums"]["report_status"];
+          storage_path?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reports_batch_id_fkey";
+            columns: ["batch_id"];
+            isOneToOne: false;
+            referencedRelation: "report_batches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_entity_id_fkey";
+            columns: ["entity_id"];
+            isOneToOne: false;
+            referencedRelation: "entities";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_generated_by_fkey";
+            columns: ["generated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
@@ -921,6 +1084,7 @@ export type Database = {
           created_by: string | null;
           default_currency: string;
           entity_kind: Database["public"]["Enums"]["entity_kind"];
+          footer_text: string | null;
           id: string;
           logo_path: string | null;
           name: string;
@@ -932,6 +1096,68 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "organizations";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      create_report: {
+        Args: {
+          p_end: string;
+          p_entity: string;
+          p_file_name: string;
+          p_kind: Database["public"]["Enums"]["report_kind"];
+          p_org: string;
+          p_params: Json;
+          p_start: string;
+        };
+        Returns: {
+          attempts: number;
+          batch_id: string | null;
+          byte_size: number | null;
+          created_at: string;
+          entity_id: string | null;
+          error: string | null;
+          file_name: string;
+          generated_by: string | null;
+          id: string;
+          kind: Database["public"]["Enums"]["report_kind"];
+          org_id: string;
+          page_count: number | null;
+          params: NonNullable<Json>;
+          period_end: string;
+          period_start: string;
+          status: Database["public"]["Enums"]["report_status"];
+          storage_path: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "reports";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      create_statement_batch: {
+        Args: { p_end: string; p_file_names: Json; p_org: string; p_start: string };
+        Returns: {
+          completed: number;
+          created_at: string;
+          created_by: string | null;
+          error: string | null;
+          failed: number;
+          id: string;
+          kind: Database["public"]["Enums"]["report_kind"];
+          org_id: string;
+          period_end: string;
+          period_start: string;
+          status: Database["public"]["Enums"]["batch_status"];
+          total: number;
+          updated_at: string;
+          zip_path: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "report_batches";
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -948,6 +1174,7 @@ export type Database = {
         }[];
       };
       is_org_member: { Args: { p_org: string }; Returns: boolean };
+      next_quote_number: { Args: { p_org: string }; Returns: string };
       record_min_confidence: {
         Args: { p_document_type: Database["public"]["Enums"]["document_type"]; p_field_confidence: Json };
         Returns: number;
@@ -956,6 +1183,7 @@ export type Database = {
         Args: { p_issues: Json; p_org: string; p_record: string };
         Returns: undefined;
       };
+      report_batch_progress: { Args: { p_batch: string; p_org: string }; Returns: boolean };
       retry_document: {
         Args: { p_document: string };
         Returns: {
@@ -1174,6 +1402,7 @@ export type Database = {
     Enums: {
       allocation_method: "percent" | "amount";
       audit_action: "insert" | "update" | "delete";
+      batch_status: "running" | "zipping" | "ready" | "failed";
       cost_category:
         | "repairs_maintenance"
         | "materials"
@@ -1204,6 +1433,8 @@ export type Database = {
       org_role: "owner" | "admin" | "reviewer" | "member" | "viewer";
       page_source: "text_layer" | "ocr";
       record_status: "needs_review" | "approved" | "rejected";
+      report_kind: "statement" | "summary" | "quote";
+      report_status: "queued" | "rendering" | "ready" | "failed";
       review_action_type: "approve" | "reject" | "correct" | "reopen";
     };
     CompositeTypes: {
@@ -1320,6 +1551,7 @@ export const Constants = {
     Enums: {
       allocation_method: ["percent", "amount"],
       audit_action: ["insert", "update", "delete"],
+      batch_status: ["running", "zipping", "ready", "failed"],
       cost_category: [
         "repairs_maintenance",
         "materials",
@@ -1352,6 +1584,8 @@ export const Constants = {
       org_role: ["owner", "admin", "reviewer", "member", "viewer"],
       page_source: ["text_layer", "ocr"],
       record_status: ["needs_review", "approved", "rejected"],
+      report_kind: ["statement", "summary", "quote"],
+      report_status: ["queued", "rendering", "ready", "failed"],
       review_action_type: ["approve", "reject", "correct", "reopen"],
     },
   },
