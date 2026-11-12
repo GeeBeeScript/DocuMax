@@ -274,3 +274,27 @@ Choices:
   `checkout.session.completed`, `customer.subscription.*`, `invoice.payment_failed` and `invoice.paid`.
 - Test orgs in the integration suite are created on Business (`createOrg(…, { plan })` opts into Free), so caps
   only matter in the tests about them.
+
+## ADR-024 — Production hardening choices
+
+**Status:** Accepted (2026-11-12)
+
+- **CSP with `'unsafe-inline'` scripts** (`lib/security/headers.ts`): Next's inline bootstrap scripts would need
+  per-request nonces, which disables static optimisation of marketing pages. Everything else is locked to this
+  origin plus the Supabase project; `frame-ancestors 'none'`, `object-src 'none'`, HSTS in production. Revisit with
+  nonces if third-party scripts are ever added.
+- **Rate limiting on our own Redis** instead of Upstash Ratelimit's REST client: the same Redis serves BullMQ
+  (Upstash in production), so no second client or vendor API is needed. Fixed windows; auth limited per hashed IP,
+  everything else per user; fails open if Redis is down (the database still enforces quotas and roles).
+- **Errors: Sentry, opt-in by DSN**, with PII scrubbed in `beforeSend` and no performance tracing. Logs stay
+  JSON lines from a tiny logger rather than pino — the platforms collect stdout, and the logger never receives
+  document text.
+- **Dependency audit in CI with `audit-ci`** (production deps, high+critical). Allowlisted, with reasons: the four
+  postcss advisories inside `next@15.5.x` (build-time processing of our own CSS; fixed in Next 16). Upgrading to
+  Next 16 removes the allowlist.
+- **Deployment:** web via Vercel's Git integration; database migrations and the worker image (GHCR) via
+  `.github/workflows/deploy.yml`, each step skipped until its secrets exist.
+- **Organization deletion** purges storage with the owner's own client (RLS-checked), then deletes the
+  organization row; database cascades remove everything else. User-account deletion stays an operator task.
+- **Legal pages are drafts** written from how the product works; they show a "pending legal review" notice until
+  reviewed.

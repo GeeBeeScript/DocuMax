@@ -19,4 +19,6 @@ export const publicRoutes = [
   "/contractors",
   "/signup",
   "/login",
+  "/terms",
+  "/privacy",
 ] as const;

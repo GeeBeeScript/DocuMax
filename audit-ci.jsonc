@@ -1,0 +1,15 @@
+{
+  // Dependency audit for CI (production dependencies, high and critical). Every allowlisted advisory needs a reason
+  // and an exit plan — see docs/DECISIONS.md ADR-024.
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "high": true,
+  "skip-dev": true,
+  "allowlist": [
+    // postcss 8.4.31 bundled inside next@15.5.x: these concern processing untrusted CSS/source maps; Next only
+    // processes this repository's own CSS at build time. Fixed upstream in next@16 — remove when upgrading.
+    "GHSA-qx2v-qp2m-jg93|next>postcss",
+    "GHSA-6g55-p6wh-862q|next>postcss",
+    "GHSA-fxqj-rqcc-2cmp|next>postcss",
+    "GHSA-r28c-9q8g-f849|next>postcss",
+  ],
+}

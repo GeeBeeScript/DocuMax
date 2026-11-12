@@ -22,7 +22,8 @@
     "db:reset": "supabase db reset",
     "test:slow": "SLOW_TESTS=1 vitest run lib/pipeline pdf",
     "eval:extraction": "tsx scripts/eval-extraction.ts",
-    "pdf:preview": "tsx --tsconfig tsconfig.worker.json scripts/report-preview.ts"
+    "pdf:preview": "tsx --tsconfig tsconfig.worker.json scripts/report-preview.ts",
+    "reprocess": "tsx --tsconfig tsconfig.worker.json scripts/reprocess-failed.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.101",

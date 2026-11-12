@@ -32,6 +32,13 @@ export const footerColumns = [
       { label: "Contact", href: "mailto:hello@documax.app" },
     ],
   },
+  {
+    heading: "Legal",
+    links: [
+      { label: "Terms", href: "/terms" },
+      { label: "Privacy", href: "/privacy" },
+    ],
+  },
 ] satisfies FooterColumn[];
 
 export const footerTrust = [
