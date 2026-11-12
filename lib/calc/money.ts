@@ -9,7 +9,7 @@ export function cents(value: number): Cents {
   if (!Number.isSafeInteger(value)) {
     throw new RangeError(`Cents must be a safe integer, got ${value}`);
   }
-  return value as Cents;
+  return (value === 0 ? 0 : value) as Cents; // no negative zero
 }
 
 /**

@@ -1,0 +1,141 @@
+{
+  "org": {
+    "name": "Harbor & Pine Property Management"
+  },
+  "entity": {
+    "id": "elm",
+    "name": "12 Elm Street",
+    "code": "ELM",
+    "address": "12 Elm Street, Springfield",
+    "clientName": "J. Rivera"
+  },
+  "period": {
+    "start": "2026-10-01",
+    "end": "2026-10-31",
+    "label": "October 2026"
+  },
+  "currency": "USD",
+  "summary": {
+    "net": 138450,
+    "tax": 9607,
+    "gross": 148057,
+    "records": 3
+  },
+  "categories": [
+    {
+      "category": "labor_subcontract",
+      "net": 56000,
+      "tax": 4620,
+      "gross": 60620,
+      "shareBp": 4094
+    },
+    {
+      "category": "repairs_maintenance",
+      "net": 37000,
+      "tax": 3465,
+      "gross": 40465,
+      "shareBp": 2733
+    },
+    {
+      "category": "landscaping",
+      "net": 27000,
+      "tax": 0,
+      "gross": 27000,
+      "shareBp": 1824
+    },
+    {
+      "category": "materials",
+      "net": 18450,
+      "tax": 1522,
+      "gross": 19972,
+      "shareBp": 1349
+    }
+  ],
+  "suppliers": [
+    {
+      "supplier": "Brightline Plumbing Co.",
+      "records": 2,
+      "gross": 121057
+    },
+    {
+      "supplier": "Green Thumb Landscaping",
+      "records": 1,
+      "gross": 27000
+    }
+  ],
+  "lines": [
+    {
+      "recordId": "r-landscaping",
+      "lineId": null,
+      "date": "2026-10-03",
+      "supplier": "Green Thumb Landscaping",
+      "invoiceNumber": "GT-88",
+      "description": null,
+      "category": "landscaping",
+      "net": 27000,
+      "tax": 0,
+      "gross": 27000,
+      "split": true
+    },
+    {
+      "recordId": "r-plumbing",
+      "lineId": "l1",
+      "date": "2026-10-14",
+      "supplier": "Brightline Plumbing Co.",
+      "invoiceNumber": "INV-2041",
+      "description": "Replace water heater valve",
+      "category": "repairs_maintenance",
+      "net": 42000,
+      "tax": 3465,
+      "gross": 45465,
+      "split": false
+    },
+    {
+      "recordId": "r-plumbing",
+      "lineId": "l2",
+      "date": "2026-10-14",
+      "supplier": "Brightline Plumbing Co.",
+      "invoiceNumber": "INV-2041",
+      "description": "Labor 3.5 hours",
+      "category": "labor_subcontract",
+      "net": 56000,
+      "tax": 4620,
+      "gross": 60620,
+      "split": false
+    },
+    {
+      "recordId": "r-plumbing",
+      "lineId": "l3",
+      "date": "2026-10-14",
+      "supplier": "Brightline Plumbing Co.",
+      "invoiceNumber": "INV-2041",
+      "description": "Copper fittings",
+      "category": "materials",
+      "net": 18450,
+      "tax": 1522,
+      "gross": 19972,
+      "split": false
+    },
+    {
+      "recordId": "r-credit",
+      "lineId": null,
+      "date": "2026-10-20",
+      "supplier": "Brightline Plumbing Co.",
+      "invoiceNumber": "CN-12",
+      "description": null,
+      "category": "repairs_maintenance",
+      "net": -5000,
+      "tax": 0,
+      "gross": -5000,
+      "split": false
+    }
+  ],
+  "otherCurrencies": [
+    {
+      "currency": "EUR",
+      "records": 1,
+      "gross": 1500
+    }
+  ],
+  "generatedAt": "2026-11-01T09:00:00.000Z"
+}

@@ -36,3 +36,57 @@ export function checkLineMath(quantity: string, unitPrice: Cents, amount: Cents)
   if (expected == null) return null;
   return { ok: withinCents(expected, amount, 1), expected, actual: amount };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Aggregation of postings (Phase 7). Inputs come from lib/calc/postings.ts, so allocations are already applied.
+// ---------------------------------------------------------------------------------------------------------------
+
+export interface Totals {
+  net: Cents;
+  tax: Cents;
+  gross: Cents;
+  /** Distinct records contributing. */
+  records: number;
+}
+
+interface PostingLike {
+  recordId: string;
+  netCents: Cents;
+  taxCents: Cents;
+  grossCents: Cents;
+}
+
+export const ZERO_TOTALS: Totals = { net: cents(0), tax: cents(0), gross: cents(0), records: 0 };
+
+export function sumPostings(postings: readonly PostingLike[]): Totals {
+  return {
+    net: sumCents(postings.map((p) => p.netCents)),
+    tax: sumCents(postings.map((p) => p.taxCents)),
+    gross: sumCents(postings.map((p) => p.grossCents)),
+    records: new Set(postings.map((p) => p.recordId)).size,
+  };
+}
+
+/** Totals per key, largest gross first (ties by key, so output is stable). */
+export function groupTotals<P extends PostingLike, K extends string | null>(
+  postings: readonly P[],
+  keyOf: (p: P) => K,
+): { key: K; totals: Totals }[] {
+  const groups = new Map<K, P[]>();
+  for (const p of postings) {
+    const k = keyOf(p);
+    groups.set(k, [...(groups.get(k) ?? []), p]);
+  }
+  return [...groups]
+    .map(([key, ps]) => ({ key, totals: sumPostings(ps) }))
+    .sort(
+      (a, b) => b.totals.gross - a.totals.gross || String(a.key ?? "").localeCompare(String(b.key ?? "")),
+    );
+}
+
+export const addTotals = (a: Totals, b: Totals): Totals => ({
+  net: cents(a.net + b.net),
+  tax: cents(a.tax + b.tax),
+  gross: cents(a.gross + b.gross),
+  records: a.records + b.records,
+});
