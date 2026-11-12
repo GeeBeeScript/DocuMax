@@ -102,12 +102,27 @@ are never inserted — they go to the error report (row, column, message).
 
 ## Billing & usage
 
-| Table            | Key columns                                                                                                                                              |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `subscriptions`  | `org_id` (unique), `stripe_customer_id`, `stripe_subscription_id`, `plan`, `status`, `current_period_start/end`                                          |
-| `usage_counters` | `org_id`, `period_start`, `documents_used`; unique(org_id, period_start). Incremented by `consume_document_quota(org_id)` (atomic, raises when over cap) |
+| Table            | Key columns                                                                                                                                                                                                                                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `subscriptions`  | `org_id` (unique), `stripe_customer_id`, `stripe_subscription_id`, `plan` → `plan_limits`, `billing_interval`, `status` (Stripe's), `current_period_start/end`, `cancel_at_period_end`, `payment_failed_at`, `last_event_at` ✎ — members read; written by the webhook (service role) and `set_stripe_customer()` (owners) |
+| `usage_counters` | `org_id`, `period_start` (first day of the org's month, in its time zone), `documents_used`; unique(org_id, period_start) — members read; changed only by the quota functions                                                                                                                                             |
+| `plan_limits`    | `plan`, `documents_per_month`, `seats` (null = unlimited) — global, read-only; mirrors `lib/billing/plans.ts` (an integration test fails if they differ)                                                                                                                                                                  |
+| `stripe_events`  | `id` (Stripe event id), `type` — global; service role only; makes the webhook idempotent                                                                                                                                                                                                                                  |
 
-Plan caps are defined in code (`lib/billing/plans.ts`) and mirrored in Stripe price metadata.
+| Function                                  | Who                     | Does                                                                                                               |
+| ----------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `org_plan(org)`                           | any member              | The plan while Stripe's status is `active`, `trialing` or `past_due`; otherwise `free`.                            |
+| `consume_document_quota(org, n)`          | writers                 | Atomic upsert-increment of this month's counter; raises `quota_exceeded` (hint = remaining) instead of going over. |
+| `create_document_upload(…)`               | writers                 | `consume_document_quota` + the pending `documents` row in one transaction (used by `requestUpload`).               |
+| `cancel_document_upload(doc)`             | writers                 | Deletes a still-`uploading` document and releases its quota.                                                       |
+| `release_document_quota(org, n, period?)` | service role / internal | Never below zero; not callable by users (they could reset their counter).                                          |
+| `org_usage(org)`                          | members                 | Plan, documents used / cap, seats used (members + open invites) / cap, period start.                               |
+| `set_stripe_customer(org, customer)`      | owners                  | Stores the Stripe customer created at checkout (never overwrites one).                                             |
+| trigger `enforce_seat_limit`              | —                       | New invites are refused (`seat_limit`) when members + open invites would exceed the plan's seats.                  |
+
+Plan caps are defined in code (`lib/billing/plans.ts`, used by the UI and pricing page) and mirrored in
+`plan_limits` for enforcement in the database; Stripe prices map to plans via `STRIPE_PRICE_*` env ids, with the
+price's `metadata.plan` as fallback.
 
 ## Audit
 

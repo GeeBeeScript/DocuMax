@@ -2,6 +2,7 @@ import {
   Building2,
   ArrowDownUp,
   ClipboardCheck,
+  CreditCard,
   FileChartColumn,
   Settings,
   FileText,
@@ -49,6 +50,7 @@ export const appNav: AppNavItem[] = [
     roles: ["owner", "admin"],
   },
   { label: "Audit log", href: "/app/settings/audit", icon: History, roles: ["owner", "admin"] },
+  { label: "Billing", href: "/app/settings/billing", icon: CreditCard, roles: ["owner"] },
 ];
 
 export const roleMeta: Record<OrgRole, { label: string; description: string }> = {

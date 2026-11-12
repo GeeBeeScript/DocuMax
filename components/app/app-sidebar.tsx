@@ -10,10 +10,13 @@ import { cn } from "@/lib/utils";
 export function AppSidebar({
   switcher,
   nav,
+  footer,
   className,
 }: {
   switcher: ReactNode;
   nav: ReactNode;
+  /** Pinned to the bottom (usage meter). */
+  footer?: ReactNode;
   className?: string;
 }) {
   return (
@@ -23,6 +26,7 @@ export function AppSidebar({
       </Link>
       {switcher}
       {nav}
+      {footer && <div className="mt-auto">{footer}</div>}
     </div>
   );
 }

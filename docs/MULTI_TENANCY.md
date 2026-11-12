@@ -50,6 +50,9 @@ a row to another org (the `org_id` column is immutable — enforced by a trigger
 - Storage policies use `public.is_org_member(((storage.foldername(name))[1])::uuid)`.
 - Downloads use short-lived signed URLs (≤ 5 min) created server-side after an RLS-checked row lookup.
 
+Global (non-tenant) tables: `plan_limits` (read-only for signed-in users) and `stripe_events` (no policies — service
+role only). Both have RLS enabled and forced like every table.
+
 ## Service role rules (worker, webhooks, tests)
 
 1. Only `lib/supabase/admin.ts` creates a service-role client.

@@ -5,7 +5,9 @@ import { AppSidebar } from "@/components/app/app-sidebar";
 import { OrgSwitcher } from "@/components/app/org-switcher";
 import { TopBar } from "@/components/app/top-bar";
 import { UserMenu } from "@/components/app/user-menu";
-import { roleMeta, shellCopy } from "@/content/app";
+import { UsageMeter } from "@/components/app/usage-meter";
+import { billingCopy, roleMeta, shellCopy } from "@/content/app";
+import { getUsage } from "@/features/billing/queries";
 import { logOut } from "@/features/auth/actions";
 import { setActiveOrg } from "@/features/org/actions";
 import { requireActiveOrg } from "@/lib/auth/session";
@@ -23,6 +25,7 @@ async function switchOrg(orgId: string) {
 /** Authenticated app shell: sidebar (desktop) / drawer (mobile), top bar, content. */
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const ctx = await requireActiveOrg();
+  const usage = await getUsage(ctx.org.id);
   const orgs = ctx.memberships.map((m) => ({
     id: m.org.id,
     name: m.org.name,
@@ -34,6 +37,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <OrgSwitcher orgs={orgs} activeId={ctx.org.id} onSwitch={switchOrg} labels={shellCopy.orgSwitcher} />
       }
       nav={<AppNav entityKind={ctx.org.entity_kind} role={ctx.role} />}
+      footer={
+        <UsageMeter
+          used={usage.documentsUsed}
+          cap={usage.documentsCap}
+          label={billingCopy.usage.meterLabel(usage.documentsUsed, usage.documentsCap)}
+          caption={`${billingCopy.usage.documents}: ${billingCopy.usage.of(usage.documentsUsed, usage.documentsCap)}`}
+          href="/app/settings/billing"
+        />
+      }
     />
   );
 

@@ -35,6 +35,12 @@ export async function startCheckout(input: unknown): Promise<ActionResult<{ url:
   if (!parsed.success) return invalid(parsed.error);
   const ctx = await ownerContext();
   if (!ctx) return fail(new ForbiddenError().message);
+  let api: ReturnType<typeof stripe>;
+  try {
+    api = stripe(); // not configured → say so before anything else
+  } catch (error) {
+    return billingError(error);
+  }
   const price = priceIdFor(parsed.data.plan, parsed.data.interval);
   if (!price) return fail(billingCopy.notAvailable);
 
@@ -46,7 +52,6 @@ export async function startCheckout(input: unknown): Promise<ActionResult<{ url:
     .maybeSingle();
   const appUrl = clientEnv().NEXT_PUBLIC_APP_URL;
   try {
-    const api = stripe();
     let customer = sub?.stripe_customer_id ?? null;
     if (customer && sub?.stripe_subscription_id && ACTIVE.has(sub.status)) {
       const portal = await api.billingPortal.sessions.create({

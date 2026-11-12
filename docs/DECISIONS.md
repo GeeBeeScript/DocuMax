@@ -250,3 +250,27 @@ Choices:
 - **Limits:** imports ≤ 5 MB / 5,000 rows (split larger files); exports are built in memory and capped at 20,000
   records per file — streaming can come later if needed. The last column mapping is stored on the organization
   (`organizations.import_mapping`) rather than in a separate table.
+
+## ADR-023 — Billing: Stripe owns the subscription, Postgres enforces the limits
+
+**Status:** Accepted (2026-11-12)
+
+- **The plan changes only through the signed webhook.** Checkout and the portal are Stripe-hosted; our actions only
+  create sessions. `subscriptions` mirrors Stripe (idempotent per event id, older events ignored), and
+  `org_plan()` treats `active`, `trialing` and `past_due` as paid — Stripe's retries decide when a failed payment
+  ends the plan; a deleted subscription means Free. Downgrades and cancellations are configured in the Stripe
+  portal to apply at period end, so the plan simply follows Stripe's current price.
+- **Caps live in two places on purpose:** `lib/billing/plans.ts` (UI, pricing page) and `plan_limits` (enforcement
+  inside the database, where it can be atomic). A test fails if they drift.
+- **Quota is taken when an upload starts,** atomically with the pending document (`create_document_upload`), and
+  given back if the browser never finishes the upload. Processed documents count even if extraction fails later.
+  Months follow the org's time zone.
+- **Seats = members + open invites;** the limit is checked when an invite is created (a database trigger), so an
+  accepted invite never needs a second check.
+- **Releasing quota is not a user operation** (only `cancel_document_upload` and the service role can), otherwise
+  a member could reset the counter.
+- **Without Stripe configuration** the app runs on Free and billing actions say so; real billing needs
+  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, the four `STRIPE_PRICE_*` ids and a webhook endpoint for
+  `checkout.session.completed`, `customer.subscription.*`, `invoice.payment_failed` and `invoice.paid`.
+- Test orgs in the integration suite are created on Business (`createOrg(…, { plan })` opts into Free), so caps
+  only matter in the tests about them.
