@@ -7,7 +7,8 @@ import { documentsCopy } from "@/content/app";
 import { DocumentViewer } from "@/features/documents/components/document-viewer";
 import { DocumentStatusPanel } from "@/features/documents/components/document-status-panel";
 import { ExtractedText } from "@/features/documents/components/extracted-text";
-import { getDocument, listDocumentPages } from "@/features/documents/queries";
+import { RecordView } from "@/features/documents/components/record-view";
+import { getDocument, getDocumentRecord, listDocumentPages } from "@/features/documents/queries";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { canWrite } from "@/lib/auth/roles";
 import { requireActiveOrg } from "@/lib/auth/session";
@@ -23,7 +24,10 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
   const ctx = await requireActiveOrg();
   const doc = /^[0-9a-f-]{36}$/i.test(id) ? await getDocument(ctx.org.id, id) : null;
   if (!doc) notFound();
-  const pages = await listDocumentPages(ctx.org.id, doc.id);
+  const [pages, record] = await Promise.all([
+    listDocumentPages(ctx.org.id, doc.id),
+    getDocumentRecord(ctx.org.id, doc.id),
+  ]);
   const labels = entityLabels(ctx.org.entity_kind);
   const { facts } = documentsCopy.detail;
 
@@ -64,21 +68,26 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           aria-label={doc.fileName}
           className="order-2 min-w-0 rounded-2xl border border-gray-200 bg-paper p-4 lg:order-1"
         >
-          <Tabs defaultValue="preview" className="gap-4">
+          {/* Extracted data first once there is a record; until then the preview. */}
+          <Tabs defaultValue={record ? "data" : "preview"} className="gap-4">
             <TabsList className="self-start rounded-full bg-gray-100 p-1">
-              <TabsTrigger
-                value="preview"
-                className="rounded-full px-4 font-heading font-semibold data-active:bg-paper"
-              >
-                {documentsCopy.tabs.preview}
-              </TabsTrigger>
-              <TabsTrigger
-                value="text"
-                className="rounded-full px-4 font-heading font-semibold data-active:bg-paper"
-              >
-                {documentsCopy.tabs.text}
-              </TabsTrigger>
+              {(["data", "preview", "text"] as const).map((tab) => (
+                <TabsTrigger
+                  key={tab}
+                  value={tab}
+                  className="rounded-full px-4 font-heading font-semibold data-active:bg-paper"
+                >
+                  {documentsCopy.tabs[tab]}
+                </TabsTrigger>
+              ))}
             </TabsList>
+            <TabsContent value="data">
+              <RecordView
+                data={record}
+                entitySingular={labels.singular}
+                threshold={Number(ctx.org.review_threshold)}
+              />
+            </TabsContent>
             <TabsContent value="preview">
               <DocumentViewer url={doc.fileUrl} mimeType={doc.mimeType} fileName={doc.fileName} />
             </TabsContent>

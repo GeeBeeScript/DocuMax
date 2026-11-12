@@ -9,6 +9,7 @@ import { documentsCopy } from "@/content/app";
 import { DOCUMENT_STATUS_META } from "@/lib/documents/status";
 import { formatBytes } from "@/lib/documents/upload-rules";
 import { useDocumentStatuses } from "../hooks/use-document-status";
+import { useThrottledRefresh } from "../hooks/use-throttled-refresh";
 import type { DocumentRow } from "../queries";
 
 const dateFormat = new Intl.DateTimeFormat("en-US", {
@@ -29,6 +30,7 @@ export function DocumentList({
   entityHeader: string;
 }) {
   const [announcement, setAnnouncement] = useState("");
+  const refresh = useThrottledRefresh();
   const names = Object.fromEntries(documents.map((d) => [d.id, d.fileName]));
   const statuses = useDocumentStatuses(
     orgId,
@@ -37,6 +39,8 @@ export function DocumentList({
     ),
     (id, next) => {
       if (names[id]) setAnnouncement(documentsCopy.live(names[id], DOCUMENT_STATUS_META[next.status].label));
+      // Extraction can assign the property/job: re-fetch rows when a document leaves the AI stage.
+      if (["validating", "ready", "needs_review", "failed"].includes(next.status)) refresh();
     },
   );
   const { columns } = documentsCopy.list;

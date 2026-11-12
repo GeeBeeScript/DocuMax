@@ -28,7 +28,8 @@ export default defineConfig({
     {
       // A second worker next to one you already run is harmless: BullMQ consumers share the queue.
       command: "npm run worker:start",
-      env: { STUB_STEP_MS: "150" },
+      // Deterministic dev model: E2E needs no AI key and never calls a paid API.
+      env: { STUB_STEP_MS: "150", AI_PROVIDER: "mock" },
       wait: { stdout: /worker started/ },
       timeout: 60_000,
       name: "worker",

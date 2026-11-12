@@ -4,6 +4,9 @@ import { mergeStatuses, newer } from "../hooks/use-document-status";
 import type { DocumentRow } from "../queries";
 import { DocumentList } from "./document-list";
 
+const refresh = vi.hoisted(() => vi.fn());
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
+
 type Handler = (payload: { new: Record<string, unknown> }) => void;
 const realtime = vi.hoisted(() => ({
   handler: null as Handler | null,
@@ -143,5 +146,14 @@ describe("DocumentList", () => {
     act(() => realtime.handler!({ new: { id: "d1", status: "failed", error: "x", updated_at: T2 } }));
     act(() => realtime.handler!({ new: { id: "d1", status: "extracting", error: null, updated_at: T1 } }));
     expect(within(row("invoice.pdf")).getByText("Failed")).toBeInTheDocument();
+  });
+
+  it("re-fetches rows (throttled) when documents leave the AI stage, not on every step", async () => {
+    render(<DocumentList orgId="org-1" documents={docs} entityHeader="Property" />);
+    await waitFor(() => expect(realtime.handler).not.toBeNull());
+    act(() => realtime.handler!({ new: { id: "d1", status: "analyzing", error: null, updated_at: T1 } }));
+    expect(refresh).not.toHaveBeenCalled();
+    act(() => realtime.handler!({ new: { id: "d1", status: "validating", error: null, updated_at: T2 } }));
+    expect(refresh).toHaveBeenCalledTimes(1);
   });
 });
