@@ -25,7 +25,8 @@ Next.js 15 (App Router, RSC) · TypeScript strict · Tailwind v4 · shadcn/ui (B
 | Integration tests     | `npm run test:integration` (needs local Supabase running)          |
 | DB reset / types      | `npm run db:reset` / `npm run db:types`                            |
 | Unit tests            | `npm test`                                                         |
-| Slow OCR tests        | `npm run test:slow` (real Tesseract on fixtures)                   |
+| Slow tests            | `npm run test:slow` (real Tesseract OCR + Chromium PDF renders)    |
+| PDF template preview  | `npm run pdf:preview -- statement 60` (→ `.preview/*.html, *.pdf`) |
 | Extraction eval       | `npm run eval:extraction` (real AI calls — costs money; ≥ 90% bar) |
 | E2E                   | `npm run e2e`                                                      |
 | Format                | `npm run format`                                                   |
@@ -99,3 +100,5 @@ docs/                 Product, architecture and phase docs
 - Values passed from a Server Component to a Client Component must be serializable — no functions or icon
   components in props (copy objects with functions are read inside the client component instead).
 - When implementing AI calls (Phase 5), load the `claude-api` skill for current model IDs and structured-output usage.
+- PDF templates (`pdf/`) are TSX rendered outside Next: the worker/scripts use `tsx --tsconfig tsconfig.worker.json`;
+  never import `pdf/document.tsx` (react-dom/server) from `app/`.

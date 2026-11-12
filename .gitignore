@@ -49,3 +49,6 @@ next-env.d.ts
 # supabase
 supabase/.temp
 supabase/.branches
+
+# PDF template previews (npm run pdf:preview)
+.preview/

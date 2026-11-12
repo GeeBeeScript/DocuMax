@@ -1,6 +1,8 @@
 import {
   Building2,
   ClipboardCheck,
+  FileChartColumn,
+  Settings,
   FileText,
   HardHat,
   History,
@@ -35,7 +37,9 @@ export const appNav: AppNavItem[] = [
   },
   { label: "Documents", href: "/app/documents", icon: FileText },
   { label: "Review", href: "/app/review", icon: ClipboardCheck },
+  { label: "Reports", href: "/app/reports", icon: FileChartColumn },
   { label: "Team", href: "/app/settings/members", icon: Users },
+  { label: "Organization", href: "/app/settings/organization", icon: Settings, roles: ["owner", "admin"] },
   {
     label: "Review settings",
     href: "/app/settings/review",
@@ -629,4 +633,91 @@ export const statementsCopy = {
   unknownSupplier: "Unknown supplier",
   onlyApproved: "Only approved records are counted.",
   facts: { code: "Reference", address: "Address", client: "Client" },
+};
+
+export const reportsCopy = {
+  title: "Reports",
+  description:
+    "Branded PDF statements, summaries and quotes. Generated in the background — download when ready.",
+  kinds: { statement: "Statement", summary: "Summary", quote: "Quote" },
+  status: { queued: "Queued", rendering: "Generating", ready: "Ready", failed: "Failed" },
+  batchStatus: { running: "Generating", zipping: "Zipping", ready: "Ready", failed: "Failed" },
+  columns: {
+    name: "Report",
+    kind: "Type",
+    period: "Period",
+    status: "Status",
+    created: "Created",
+    download: "Download",
+  },
+  caption: "Generated reports",
+  download: "Download",
+  downloadZip: "Download ZIP",
+  pages: (n: number) => `${n} ${n === 1 ? "page" : "pages"}`,
+  batches: {
+    title: "Batches",
+    progress: (done: number, total: number) => `${done} of ${total} statements`,
+    failed: (n: number) => `${n} failed`,
+    label: (period: string) => `Statements · ${period}`,
+  },
+  empty: {
+    title: "No reports yet",
+    description: "Generate a statement from a property or job page, or all statements for a month at once.",
+  },
+  readOnly: "Only reviewers, admins and owners can generate reports.",
+  actions: {
+    batch: (plural: string) => `Statements for all ${plural.toLowerCase()}`,
+    summary: "Portfolio summary",
+    statement: "Generate statement",
+    quote: "Create quote",
+  },
+  dialogs: {
+    month: "Month",
+    batchTitle: (plural: string) => `Statements for all ${plural.toLowerCase()}`,
+    batchBody: (plural: string) =>
+      `One PDF per active ${plural.toLowerCase().replace(/s$/, "")}, plus a ZIP with all of them. Only approved costs are included.`,
+    summaryTitle: "Portfolio summary",
+    summaryBody: "One PDF with every property's or job's totals for the month.",
+    statementTitle: "Generate statement",
+    statementBody: (name: string, period: string) => `${name} · ${period}. Only approved costs are included.`,
+    quoteTitle: "Create quote",
+    quoteBody:
+      "Prices the job's approved costs (before tax) with your markup. Costs and markup aren't shown to the client.",
+    from: "Costs from",
+    to: "Costs to",
+    markup: "Markup (%)",
+    tax: "Sales tax (%)",
+    validDays: "Valid for (days)",
+    notes: "Notes for the client (optional)",
+    invalidPercent: "Enter a percentage like 15 or 8.25",
+    cancel: "Cancel",
+    generate: "Generate",
+    queued: "Generating — it'll be ready in a moment.",
+    viewReports: "View reports",
+  },
+};
+
+export const organizationCopy = {
+  title: "Organization",
+  description: 'Branding for your PDFs, and the time zone used for "this month".',
+  logo: {
+    label: "Logo",
+    hint: "PNG, JPG or WEBP, up to 2 MB. Shown at the top of every PDF page.",
+    choose: "Upload logo",
+    replace: "Replace logo",
+    remove: "Remove logo",
+    uploading: "Uploading…",
+    tooBig: "That file is larger than 2 MB.",
+    wrongType: "Use a PNG, JPG or WEBP image.",
+    alt: (org: string) => `${org} logo`,
+  },
+  color: { label: "Brand colour", hint: "Used for the bar at the top of each PDF page." },
+  footer: {
+    label: "Footer text",
+    hint: "Shown at the bottom of every PDF page, e.g. your address or licence number.",
+  },
+  timezone: { label: "Time zone", hint: 'Decides which month is "this month" on statements.' },
+  save: "Save",
+  saved: "Organization settings saved",
+  forbidden: "Only owners and admins can change organization settings.",
 };

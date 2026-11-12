@@ -28,3 +28,26 @@ export const ReviewSettingsSchema = z.object({
   autoApprove: z.boolean(),
 });
 export type ReviewSettingsInput = z.infer<typeof ReviewSettingsSchema>;
+
+/** IANA zones known to this runtime (plus UTC). */
+export function isTimeZone(value: string): boolean {
+  if (value === "UTC") return true;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export const OrganizationSettingsSchema = z.object({
+  /** `{org_id}/logo-….png|jpg|jpeg|webp` in the branding bucket, or null to remove it. */
+  logoPath: z
+    .string()
+    .regex(/^[0-9a-f-]{36}\/logo-[\w-]{1,60}\.(png|jpe?g|webp)$/i, "Upload a PNG, JPG or WEBP logo.")
+    .nullable(),
+  brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Choose a colour."),
+  footerText: z.string().trim().max(200, "Keep the footer under 200 characters."),
+  timezone: z.string().refine(isTimeZone, "Choose a time zone."),
+});
+export type OrganizationSettingsInput = z.infer<typeof OrganizationSettingsSchema>;

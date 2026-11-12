@@ -212,10 +212,18 @@ describe("allocateByWeights", () => {
 describe("percent strings", () => {
   it("parses exactly and formats back", async () => {
     const { parsePercentBp, formatBp } = await import("./allocate");
-    expect(["60", "33.33", "12,5 %", "0.01", "100", "100.00"].map(parsePercentBp)).toEqual([
+    expect(["60", "33.33", "12,5 %", "0.01", "100", "100.00"].map((s) => parsePercentBp(s))).toEqual([
       6000, 3333, 1250, 1, 10000, 10000,
     ]);
-    expect(["100.01", "1.234", "-5", "abc", ""].map(parsePercentBp)).toEqual([null, null, null, null, null]);
+    expect(["100.01", "1.234", "-5", "abc", ""].map((s) => parsePercentBp(s))).toEqual([
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
     expect([6000, 3333, 1250, 1, 0].map(formatBp)).toEqual(["60", "33.33", "12.5", "0.01", "0"]);
+    expect(parsePercentBp("250", 100_000)).toBe(25000);
+    expect(parsePercentBp("250")).toBeNull();
   });
 });

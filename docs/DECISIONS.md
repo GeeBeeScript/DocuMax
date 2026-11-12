@@ -205,3 +205,27 @@ Choices:
   take the same sign).
 - **Time zone** (`organizations.timezone`, default UTC) only decides what "this month" is; issue dates are calendar
   dates. The field is added to the organization settings page with branding (Phase 8); until then it is UTC.
+
+## ADR-021 — PDF reports: pagination in code, templates in code, worker-only report storage
+
+**Status:** Accepted (2026-11-12)
+
+- **Deterministic pagination.** Chromium can repeat table headers, but it can't print carried-forward subtotals or
+  guarantee where rows break. Every report block and table row therefore has a fixed height (mm), long text is
+  truncated to one line, and `pdf/layout.ts` assigns rows to pages. Each page shows "Brought forward" / "Carried
+  forward" from `lib/calc` running totals. Render tests compare the PDF's page count with the layout and check every
+  row appears exactly once. Trade-off: descriptions are truncated rather than wrapped.
+- **Templates are code** (`pdf/templates`); the `report_templates` table in the original data model was not created.
+  Per-org look = branding on `organizations` (logo, brand colour, footer text). A table can come back when
+  organizations need their own templates.
+- **Quotes show prices only.** Each cost line (net of tax) is marked up by the same rate, rounded per line, so the
+  printed lines add up to the subtotal; tax is applied to the subtotal. Numbers are `Q-YYYY-NNNN`, per org and year,
+  assigned in the database.
+- **Only the worker writes the `reports` bucket**; branding is owners/admins only. A generated PDF can't be replaced
+  through the API by a user.
+- **ZIPs with `fflate`** (stored, not deflated: PDFs are already compressed) instead of `archiver` — in-memory,
+  dependency-free, and readable in tests.
+- **Batches finish exactly once:** each finished report recounts its batch in `report_batch_progress()` under a row
+  lock; the call that completes the batch enqueues `batch-zip`.
+- **No in-app preview route:** Next refuses `react-dom/server` in the app bundle, so template work uses
+  `npm run pdf:preview` (HTML + real PDF from fixtures).
