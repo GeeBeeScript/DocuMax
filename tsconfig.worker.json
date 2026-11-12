@@ -1,0 +1,5 @@
+{
+  // The worker and scripts run under tsx; Next needs "jsx": "preserve", tsx needs a real JSX transform for pdf/.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "jsx": "react-jsx" }
+}

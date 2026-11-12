@@ -8,9 +8,11 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --include=dev
 
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.worker.json ./
 COPY lib ./lib
+COPY content ./content
+COPY pdf ./pdf
 COPY worker ./worker
 
-# tsx runs TypeScript directly and resolves the @/ path alias from tsconfig.json.
-CMD ["npx", "tsx", "--tsconfig", "tsconfig.json", "worker/index.ts"]
+# tsx runs TypeScript directly; tsconfig.worker.json = tsconfig.json + a JSX transform for pdf/ templates.
+CMD ["npx", "tsx", "--tsconfig", "tsconfig.worker.json", "worker/index.ts"]

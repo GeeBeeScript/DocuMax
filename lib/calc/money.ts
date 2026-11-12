@@ -104,3 +104,24 @@ export function centsToDecimal(value: Cents): string {
 export function withinCents(a: Cents, b: Cents, tolerance: number): boolean {
   return Math.abs(a - b) <= tolerance;
 }
+
+/** Running totals: `[a, a+b, a+b+c, …]` — for carried-forward subtotals on paginated reports. */
+export function runningTotals(values: readonly Cents[]): Cents[] {
+  let total = 0;
+  return values.map((v) => cents((total += v)));
+}
+
+/**
+ * `value × rate` for a rate in basis points (1 250 = 12.5%), rounded half away from zero to whole cents. Exact
+ * (BigInt) — used for quote markup and tax.
+ */
+export function applyRateBp(value: Cents, rateBp: number): Cents {
+  if (!Number.isInteger(rateBp)) throw new RangeError(`Rate must be whole basis points, got ${rateBp}`);
+  const product = BigInt(value) * BigInt(rateBp);
+  const divisor = BigInt(10000);
+  const negative = product < BigInt(0);
+  const abs = negative ? -product : product;
+  let q = abs / divisor;
+  if ((abs % divisor) * BigInt(2) >= divisor) q += BigInt(1);
+  return cents(Number(negative ? -q : q));
+}
