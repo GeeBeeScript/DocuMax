@@ -17,6 +17,8 @@ const serverSchema = clientSchema.extend({
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
   AI_PROVIDER: z.enum(["anthropic", "openai"]).default("anthropic"),
   AI_MODEL: z.string().min(1).default("claude-sonnet-5-5"),
+  /** Optional reasoning effort for providers that support it (Anthropic: low … max). Unset = model default. */
+  AI_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),

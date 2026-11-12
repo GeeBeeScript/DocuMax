@@ -1,0 +1,86 @@
+{
+  "documentType": {
+    "value": "receipt",
+    "confidence": 0.95
+  },
+  "supplier": {
+    "name": {
+      "value": "HARDWARE DEPOT",
+      "confidence": 0.92
+    },
+    "taxId": {
+      "value": null,
+      "confidence": 0.9
+    },
+    "address": {
+      "value": "Store 118 \u00b7 Bayview",
+      "confidence": 0.6
+    }
+  },
+  "invoiceNumber": {
+    "value": "88213",
+    "confidence": 0.85
+  },
+  "issueDate": {
+    "value": "2026-10-20",
+    "confidence": 0.9
+  },
+  "dueDate": {
+    "value": null,
+    "confidence": 0.95
+  },
+  "currency": {
+    "value": null,
+    "confidence": 0.4
+  },
+  "subtotal": {
+    "value": "28.49",
+    "confidence": 0.9
+  },
+  "tax": {
+    "amount": {
+      "value": "2.35",
+      "confidence": 0.9
+    },
+    "rate": {
+      "value": null,
+      "confidence": 0.9
+    }
+  },
+  "total": {
+    "value": "30.84",
+    "confidence": 0.92
+  },
+  "category": {
+    "value": "materials",
+    "confidence": 0.8
+  },
+  "entityHint": {
+    "value": null,
+    "confidence": 0.7
+  },
+  "lineItems": [
+    {
+      "description": {
+        "value": "PVC ELBOW 2X",
+        "confidence": 0.8
+      },
+      "quantity": {
+        "value": null,
+        "confidence": 0.6
+      },
+      "unitPrice": {
+        "value": null,
+        "confidence": 0.6
+      },
+      "amount": {
+        "value": "6.10",
+        "confidence": 0.88
+      },
+      "category": {
+        "value": "materials",
+        "confidence": 0.8
+      }
+    }
+  ]
+}
