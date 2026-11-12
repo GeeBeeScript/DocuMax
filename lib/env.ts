@@ -33,6 +33,7 @@ const serverSchema = clientSchema.extend({
   STRIPE_PRICE_PRO_YEARLY: z.string().optional(),
   STRIPE_PRICE_BUSINESS_MONTHLY: z.string().optional(),
   STRIPE_PRICE_BUSINESS_YEARLY: z.string().optional(),
+  SENTRY_DSN: z.string().optional(),
 });
 
 export type ClientEnv = z.infer<typeof clientSchema>;

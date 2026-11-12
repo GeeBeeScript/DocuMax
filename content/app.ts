@@ -724,6 +724,17 @@ export const organizationCopy = {
   save: "Save",
   saved: "Organization settings saved",
   forbidden: "Only owners and admins can change organization settings.",
+  danger: {
+    title: "Delete organization",
+    description:
+      "Permanently deletes this organization: every document, record, report, import and file, for everyone. This can't be undone.",
+    button: "Delete organization",
+    dialogTitle: "Delete this organization?",
+    dialogBody: (name: string) => `Type ${name} to confirm. All of its data and files will be gone for good.`,
+    label: "Organization name",
+    confirm: "Delete forever",
+    cancel: "Cancel",
+  },
 };
 
 export const dataCopy = {

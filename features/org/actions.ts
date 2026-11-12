@@ -1,5 +1,6 @@
 "use server";
 
+import { purgePrefix, type StorageBucketLike } from "@/lib/storage/purge";
 import { RATE_LIMITED } from "@/lib/security/rate-limit";
 import { allow } from "@/lib/security/rate-limit.server";
 import { revalidatePath } from "next/cache";
@@ -23,6 +24,7 @@ import {
   CreateOrgSchema,
   InviteIdSchema,
   InviteMemberSchema,
+  DeleteOrganizationSchema,
   MembershipIdSchema,
   OrganizationSettingsSchema,
   ReviewSettingsSchema,
@@ -250,4 +252,37 @@ export async function updateOrganizationSettings(input: unknown): Promise<Action
   }
   revalidatePath("/app", "layout");
   return ok();
+}
+
+const BUCKETS = ["documents", "reports", "imports", "branding"] as const;
+
+/**
+ * Owners: permanently delete the active organization — every stored file under `{org_id}/` in each bucket, then
+ * the organization row (all tenant data cascades). The typed name must match. Irreversible.
+ */
+export async function deleteOrganization(input: unknown): Promise<ActionResult> {
+  const parsed = DeleteOrganizationSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const ctx = await requireActiveOrg();
+  if (ctx.role !== "owner") return fail(FORBIDDEN);
+  if (parsed.data.confirmName !== ctx.org.name.trim()) {
+    return fail("Type the organization's name exactly to confirm.", {
+      confirmName: ["The name doesn't match."],
+    });
+  }
+
+  const supabase = await createSupabaseServerClient();
+  try {
+    for (const bucket of BUCKETS) {
+      await purgePrefix(supabase.storage.from(bucket) as unknown as StorageBucketLike, ctx.org.id);
+    }
+  } catch {
+    return fail("Some files couldn't be deleted. Nothing else was removed — please try again.");
+  }
+  const { data, error } = await supabase.from("organizations").delete().eq("id", ctx.org.id).select("id");
+  if (error) return dbError(error);
+  if (!data.length) return fail(FORBIDDEN);
+  console.info("organization deleted", { orgId: ctx.org.id, by: ctx.userId });
+  revalidatePath("/app", "layout");
+  redirect("/app");
 }

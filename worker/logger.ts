@@ -1,4 +1,5 @@
-/** Minimal structured logger (JSON lines). Swap for pino + Sentry in Phase 11. */
+/** Structured logger (JSON lines on stdout/stderr — the platform collects them). Errors also go to Sentry via
+ * worker/observability.ts. Never log document text or personal data: ids and counts only. */
 type Fields = Record<string, unknown>;
 
 function log(level: "info" | "warn" | "error", msg: string, fields: Fields = {}) {
