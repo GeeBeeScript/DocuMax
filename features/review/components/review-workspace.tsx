@@ -77,6 +77,7 @@ export function ReviewWorkspace({
   approverName,
   nav,
   preview,
+  split,
   history,
 }: {
   record: RecordRow;
@@ -88,6 +89,8 @@ export function ReviewWorkspace({
   approverName: string | null;
   nav: ReviewNav;
   preview: ReactNode;
+  /** Allocation editor (its own form, outside the review form). */
+  split?: ReactNode;
   history: ReactNode;
 }) {
   const router = useRouter();
@@ -315,131 +318,140 @@ export function ReviewWorkspace({
           {preview}
         </section>
 
-        <form
-          className="flex min-w-0 flex-col gap-6"
-          noValidate
-          onSubmit={(e) => {
-            e.preventDefault();
-            save();
-          }}
-        >
-          {/* Status and issues */}
-          <div className="flex flex-col gap-2" aria-live="polite">
-            {!canReview && <FormAlert tone="info">{copy.readOnly}</FormAlert>}
-            {decided ? (
-              <div className="flex flex-wrap items-center gap-3 rounded-xl bg-success-soft px-4 py-3 text-sm text-success">
-                <p className="flex-1">
-                  {record.status === "approved"
-                    ? copy.decided.approved(
-                        approverName,
-                        dateTime.format(new Date(record.approved_at ?? record.updated_at)),
-                      )
-                    : copy.decided.rejected(dateTime.format(new Date(record.updated_at)))}{" "}
-                  {canReview && copy.decided.reopenHint}
-                </p>
-                {canReview && (
-                  <PillButton variant="outline" size="sm" disabled={pending} onClick={() => submit("reopen")}>
-                    {copy.actions.reopen}
-                  </PillButton>
-                )}
+        <div className="flex min-w-0 flex-col gap-6">
+          <form
+            className="flex flex-col gap-6"
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault();
+              save();
+            }}
+          >
+            {/* Status and issues */}
+            <div className="flex flex-col gap-2" aria-live="polite">
+              {!canReview && <FormAlert tone="info">{copy.readOnly}</FormAlert>}
+              {decided ? (
+                <div className="flex flex-wrap items-center gap-3 rounded-xl bg-success-soft px-4 py-3 text-sm text-success">
+                  <p className="flex-1">
+                    {record.status === "approved"
+                      ? copy.decided.approved(
+                          approverName,
+                          dateTime.format(new Date(record.approved_at ?? record.updated_at)),
+                        )
+                      : copy.decided.rejected(dateTime.format(new Date(record.updated_at)))}{" "}
+                    {canReview && copy.decided.reopenHint}
+                  </p>
+                  {canReview && (
+                    <PillButton
+                      variant="outline"
+                      size="sm"
+                      disabled={pending}
+                      onClick={() => submit("reopen")}
+                    >
+                      {copy.actions.reopen}
+                    </PillButton>
+                  )}
+                </div>
+              ) : issues.length === 0 ? (
+                <FormAlert tone="success">{copy.clean}</FormAlert>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-ink">
+                    {copy.issueCount(errorCount, issues.length - errorCount)}
+                  </p>
+                  <ul className="flex flex-col gap-2">
+                    {groupIssues(issues).map((group) => (
+                      <li key={group[0]!.code}>
+                        <IssueBanner
+                          severity={group[0]!.severity}
+                          title={reviewCopy.issues[group[0]!.code]}
+                          message={
+                            group.length === 1 ? (
+                              group[0]!.message
+                            ) : (
+                              <ul className="list-disc pl-4">
+                                {group.map((issue, i) => (
+                                  <li key={`${issue.field ?? ""}-${i}`}>{issue.message}</li>
+                                ))}
+                              </ul>
+                            )
+                          }
+                          actions={issueAction(group[0]!)}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+
+            {/* Fields */}
+            <section aria-labelledby="review-fields" className="flex flex-col gap-4">
+              <h2 id="review-fields" className="font-heading text-lg font-bold">
+                {copy.sections.fields}
+              </h2>
+              <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
+                {fields.map((spec) => (
+                  <FieldInput
+                    key={spec.key}
+                    spec={spec}
+                    value={draft.fields[spec.key]}
+                    onChange={(v) => setField(spec.key, v)}
+                    disabled={!editable}
+                    edited={spec.key in changed}
+                    confidence={confidence[spec.confidenceKey]}
+                    threshold={context.threshold}
+                    error={
+                      parsed.errors[spec.key] ??
+                      issues.find(
+                        (i) =>
+                          i.severity === "error" &&
+                          (i.field === spec.key || (spec.key === "entity_id" && i.field === "entity")),
+                      )?.message
+                    }
+                  />
+                ))}
               </div>
-            ) : issues.length === 0 ? (
-              <FormAlert tone="success">{copy.clean}</FormAlert>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-ink">
-                  {copy.issueCount(errorCount, issues.length - errorCount)}
-                </p>
-                <ul className="flex flex-col gap-2">
-                  {groupIssues(issues).map((group) => (
-                    <li key={group[0]!.code}>
-                      <IssueBanner
-                        severity={group[0]!.severity}
-                        title={reviewCopy.issues[group[0]!.code]}
-                        message={
-                          group.length === 1 ? (
-                            group[0]!.message
-                          ) : (
-                            <ul className="list-disc pl-4">
-                              {group.map((issue, i) => (
-                                <li key={`${issue.field ?? ""}-${i}`}>{issue.message}</li>
-                              ))}
-                            </ul>
-                          )
-                        }
-                        actions={issueAction(group[0]!)}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </>
+            </section>
+
+            {/* Line items */}
+            <section aria-labelledby="review-lines" className="flex flex-col gap-3">
+              <h2 id="review-lines" className="font-heading text-lg font-bold">
+                {copy.sections.lines}
+              </h2>
+              <LineItemsEditor
+                lines={draft.lines}
+                onChange={(lines) => setDraft((d) => ({ ...d, lines }))}
+                errors={parsed.errors}
+                flagged={flagged}
+                disabled={!editable}
+              />
+            </section>
+
+            {/* Decisions */}
+            {editable && (
+              <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-gray-200 bg-paper/95 px-3 py-3 shadow-sm backdrop-blur sm:px-4">
+                <span
+                  className="mr-auto basis-full text-sm text-muted-foreground empty:hidden sm:basis-auto"
+                  aria-live="polite"
+                >
+                  {changeCount > 0 ? copy.actions.unsaved(changeCount) : null}
+                </span>
+                <PillButton type="submit" variant="outline" size="sm" disabled={pending || changeCount === 0}>
+                  {copy.actions.save}
+                </PillButton>
+                <PillButton variant="ghost" size="sm" disabled={pending} onClick={reject}>
+                  {copy.actions.reject} <Kbd className="hidden sm:inline-flex">R</Kbd>
+                </PillButton>
+                <PillButton size="sm" disabled={pending} onClick={approve}>
+                  {copy.actions.approve}{" "}
+                  <Kbd className="hidden border-ink-soft bg-ink-soft text-paper sm:inline-flex">A</Kbd>
+                </PillButton>
+              </div>
             )}
-          </div>
+          </form>
 
-          {/* Fields */}
-          <section aria-labelledby="review-fields" className="flex flex-col gap-4">
-            <h2 id="review-fields" className="font-heading text-lg font-bold">
-              {copy.sections.fields}
-            </h2>
-            <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
-              {fields.map((spec) => (
-                <FieldInput
-                  key={spec.key}
-                  spec={spec}
-                  value={draft.fields[spec.key]}
-                  onChange={(v) => setField(spec.key, v)}
-                  disabled={!editable}
-                  edited={spec.key in changed}
-                  confidence={confidence[spec.confidenceKey]}
-                  threshold={context.threshold}
-                  error={
-                    parsed.errors[spec.key] ??
-                    issues.find(
-                      (i) =>
-                        i.severity === "error" &&
-                        (i.field === spec.key || (spec.key === "entity_id" && i.field === "entity")),
-                    )?.message
-                  }
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* Line items */}
-          <section aria-labelledby="review-lines" className="flex flex-col gap-3">
-            <h2 id="review-lines" className="font-heading text-lg font-bold">
-              {copy.sections.lines}
-            </h2>
-            <LineItemsEditor
-              lines={draft.lines}
-              onChange={(lines) => setDraft((d) => ({ ...d, lines }))}
-              errors={parsed.errors}
-              flagged={flagged}
-              disabled={!editable}
-            />
-          </section>
-
-          {/* Decisions */}
-          {editable && (
-            <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-gray-200 bg-paper/95 px-3 py-3 shadow-sm backdrop-blur sm:px-4">
-              <span
-                className="mr-auto basis-full text-sm text-muted-foreground empty:hidden sm:basis-auto"
-                aria-live="polite"
-              >
-                {changeCount > 0 ? copy.actions.unsaved(changeCount) : null}
-              </span>
-              <PillButton type="submit" variant="outline" size="sm" disabled={pending || changeCount === 0}>
-                {copy.actions.save}
-              </PillButton>
-              <PillButton variant="ghost" size="sm" disabled={pending} onClick={reject}>
-                {copy.actions.reject} <Kbd className="hidden sm:inline-flex">R</Kbd>
-              </PillButton>
-              <PillButton size="sm" disabled={pending} onClick={approve}>
-                {copy.actions.approve}{" "}
-                <Kbd className="hidden border-ink-soft bg-ink-soft text-paper sm:inline-flex">A</Kbd>
-              </PillButton>
-            </div>
-          )}
+          {split}
 
           <section aria-labelledby="review-history" className="flex flex-col gap-3">
             <h2 id="review-history" className="font-heading text-lg font-bold">
@@ -447,7 +459,7 @@ export function ReviewWorkspace({
             </h2>
             {history}
           </section>
-        </form>
+        </div>
       </div>
 
       <ReasonDialog

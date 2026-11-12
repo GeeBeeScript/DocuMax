@@ -550,3 +550,83 @@ export const reviewSettingsCopy = {
   saved: "Review settings saved",
   forbidden: "Only owners and admins can change review settings.",
 };
+
+export const allocationCopy = {
+  title: (plural: string) => `Split across ${plural.toLowerCase()}`,
+  description: (plural: string) =>
+    `Share this cost between several ${plural.toLowerCase()}. Statements use the split.`,
+  none: (name: string | null, singular: string) =>
+    name
+      ? `Counts 100% to ${name}.`
+      : `Not assigned to a ${singular.toLowerCase()} yet — it won't appear on any statement.`,
+  start: "Split this cost",
+  edit: "Edit split",
+  methods: { percent: "By percentage", amount: "By amount" },
+  methodLabel: "Split method",
+  entity: (singular: string) => singular,
+  value: { percent: "Share (%)", amount: "Amount" },
+  result: "Result",
+  add: (singular: string) => `Add ${singular.toLowerCase()}`,
+  remove: (n: number) => `Remove row ${n}`,
+  removeHeader: "Remove",
+  rest: (name: string | null) => (name ? `Rest stays with ${name}` : "Rest stays unassigned"),
+  totalPercent: (pct: string) => `Total: ${pct}%`,
+  save: "Save split",
+  clear: "Remove split",
+  cancel: "Cancel",
+  saved: "Split saved",
+  cleared: "Split removed",
+  invalidPercent: "Enter a percentage like 33.33",
+  invalidAmount: "Enter an amount like 200.00",
+  chooseEntity: "Choose…",
+  lineSplitsNote: "Some lines of this record are split individually; saving a split here replaces those.",
+  noTotal: "Add the total before splitting this record.",
+  readOnly: "Only reviewers can change splits.",
+  rejected: "Rejected records aren't split.",
+};
+
+export const statementsCopy = {
+  back: (plural: string) => `All ${plural.toLowerCase()}`,
+  period: {
+    legend: "Period",
+    previous: "Previous month",
+    next: "Next month",
+    month: "Month",
+    show: "Show",
+    custom: "Custom range",
+    from: "From",
+    to: "To",
+    thisMonth: "This month",
+  },
+  tiles: { gross: "Total costs", net: "Before tax", tax: "Tax", records: "Records" },
+  categories: {
+    title: "By category",
+    caption: "Costs by category",
+    category: "Category",
+    amount: "Total",
+    share: "Share",
+  },
+  suppliers: { title: "Top suppliers", records: (n: number) => `${n} ${n === 1 ? "record" : "records"}` },
+  lines: {
+    title: "Costs",
+    caption: "Approved costs in this period",
+    date: "Date",
+    supplier: "Supplier",
+    description: "Description",
+    category: "Category",
+    amount: "Amount",
+    split: "Split",
+    splitHint: "This cost is shared with other properties or jobs.",
+  },
+  empty: {
+    title: "No approved costs in this period",
+    description:
+      "Approved records dated in this period show up here. Try another month, or review pending documents.",
+    cta: "Open review",
+  },
+  otherCurrencies: (list: string) => `Not included (other currencies): ${list}.`,
+  uncategorized: "Uncategorized",
+  unknownSupplier: "Unknown supplier",
+  onlyApproved: "Only approved records are counted.",
+  facts: { code: "Reference", address: "Address", client: "Client" },
+};

@@ -7,12 +7,12 @@ Every **tenant table** has `org_id uuid not null references organizations(id) on
 
 ## Identity & tenancy
 
-| Table           | Key columns                                                                                                                                                                                                                                                    |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `organizations` | `name`, `slug` (unique), `entity_kind` (`property`\|`job`), `logo_path`, `brand_color`, `default_currency`, `review_threshold numeric default 0.85`, `auto_approve boolean default false` (Phase 6), `created_by` ✎ — created only via `create_organization()` |
-| `profiles`      | `id = auth.users.id`, `email` (synced from auth), `full_name`, `avatar_path`, `last_org_id` — created by a trigger on `auth.users`                                                                                                                             |
-| `memberships`   | `org_id`, `user_id → profiles`, `role` (`owner`\|`admin`\|`reviewer`\|`member`\|`viewer`), unique(org_id,user_id) ✎ — inserted only by RPCs; always ≥ 1 owner                                                                                                  |
-| `invites`       | `org_id`, `email` (lower-case), `role` (never `owner`), `token_hash` (sha256), `invited_by`, `expires_at` (7 days), `accepted_at`; one open invite per email ✎                                                                                                 |
+| Table           | Key columns                                                                                                                                                                                                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `organizations` | `name`, `slug` (unique), `entity_kind` (`property`\|`job`), `logo_path`, `brand_color`, `default_currency`, `review_threshold numeric default 0.85`, `auto_approve boolean default false` (Phase 6), `timezone text default 'UTC'` (IANA; Phase 7 — decides "this month"), `created_by` ✎ — created only via `create_organization()` |
+| `profiles`      | `id = auth.users.id`, `email` (synced from auth), `full_name`, `avatar_path`, `last_org_id` — created by a trigger on `auth.users`                                                                                                                                                                                                   |
+| `memberships`   | `org_id`, `user_id → profiles`, `role` (`owner`\|`admin`\|`reviewer`\|`member`\|`viewer`), unique(org_id,user_id) ✎ — inserted only by RPCs; always ≥ 1 owner                                                                                                                                                                        |
+| `invites`       | `org_id`, `email` (lower-case), `role` (never `owner`), `token_hash` (sha256), `invited_by`, `expires_at` (7 days), `accepted_at`; one open invite per email ✎                                                                                                                                                                       |
 
 ## Entities
 
@@ -65,15 +65,29 @@ Review functions (Phase 6, `security definer`, role checked inside — owner/adm
 
 ## Allocations & reporting
 
-| Table              | Key columns                                                                                                                              |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `allocations`      | `org_id`, `record_id`, `line_item_id?`, `entity_id`, `method` (`percent`\|`amount`), `percent_bp` (basis points), `amount_cents` ✎       |
-| `report_templates` | `org_id?` (null = system), `kind` (`statement`\|`summary`\|`quote`), `name`, `config jsonb` ✎                                            |
-| `reports`          | `org_id`, `template_id`, `entity_id?`, `period_start`, `period_end`, `status`, `storage_path`, `page_count`, `batch_id?`, `generated_by` |
-| `report_batches`   | `org_id`, `period_start`, `period_end`, `status`, `zip_path`, `total`, `completed`                                                       |
+| Table              | Key columns                                                                                                                                                                                                                                                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allocations`      | `org_id`, `record_id`, `line_item_id?` (null = the whole record), `entity_id` (same org; `on delete restrict`), `method` (`percent`\|`amount`), `percent_bp` (0–10 000) xor `amount_cents` (printed sign), `created_by`; unique (record, line, entity) — members read; written only by `set_allocations()` (owner/admin/reviewer) ✎ |
+| `report_templates` | `org_id?` (null = system), `kind` (`statement`\|`summary`\|`quote`), `name`, `config jsonb` ✎                                                                                                                                                                                                                                       |
+| `reports`          | `org_id`, `template_id`, `entity_id?`, `period_start`, `period_end`, `status`, `storage_path`, `page_count`, `batch_id?`, `generated_by`                                                                                                                                                                                            |
+| `report_batches`   | `org_id`, `period_start`, `period_end`, `status`, `zip_path`, `total`, `completed`                                                                                                                                                                                                                                                  |
 
-Allocation rule: an unallocated record belongs 100% to its `entity_id`. Allocated amounts are computed by
-`lib/calc/allocate.ts` (largest-remainder) so splits always sum exactly to the source amount.
+Allocation rules (computed in `lib/calc/postings.ts`, ADR-020):
+
+- An unallocated record belongs 100% to its `entity_id` (null = unassigned: counted in the portfolio total, on no
+  entity's statement).
+- **Record-level** rows split the record **total**: by percent (rows total exactly 10 000 bp), or by fixed amounts
+  (≤ the total, same sign) with the remainder staying with `records.entity_id`. Tax is split in proportion to the
+  gross shares; each entity's net is spread over the record's lines so category breakdowns stay exact.
+- **Line-level** rows split one line the same way; other lines (and any difference between the lines and the
+  subtotal) stay with the record's entity; tax follows each entity's net.
+- A record uses record-level **or** line-level rows: `set_allocations()` replaces the other kind. Replacing a
+  record's line items in review removes its line-level rows (cascade).
+- Splits can change while a record awaits review or after approval (they distribute, not alter, the record);
+  rejected records can't be split. All shares use largest-remainder rounding, so they sum exactly to the source.
+
+`set_allocations(record, line_item?, method, splits jsonb)` validates (entities in the org, percents = 100%, amounts
+≤ source) and replaces the scope atomically; returns the number of rows.
 
 ## Imports & exports
 

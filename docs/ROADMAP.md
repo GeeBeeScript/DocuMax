@@ -12,8 +12,8 @@ tests and a Definition of Done (DoD). Update the **Status** column when a phase 
 | 4   | [Text extraction & OCR](phases/04-text-extraction.md)    | ✅ Done    | 3          |
 | 5   | [AI extraction](phases/05-ai-extraction.md)              | ✅ Done    | 4          |
 | 6   | [Validation, review & audit](phases/06-review.md)        | ✅ Done    | 5          |
-| 7   | [Calculations & allocations](phases/07-calculations.md)  | ⏳ Next    | 6          |
-| 8   | [PDF reports](phases/08-pdf-reports.md)                  | ⬜ Planned | 7          |
+| 7   | [Calculations & allocations](phases/07-calculations.md)  | ✅ Done    | 6          |
+| 8   | [PDF reports](phases/08-pdf-reports.md)                  | ⏳ Next    | 7          |
 | 9   | [Exports & imports](phases/09-exports-imports.md)        | ⬜ Planned | 7          |
 | 10  | [Billing & usage limits](phases/10-billing.md)           | ⬜ Planned | 3          |
 | 11  | [Hardening & launch](phases/11-hardening.md)             | ⬜ Planned | all        |

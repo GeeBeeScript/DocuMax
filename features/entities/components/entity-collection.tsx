@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { FileText, MapPin, UserRound } from "lucide-react";
 import { DataTable } from "@/components/app/data-table";
 import { entitiesCopy } from "@/content/app";
@@ -39,7 +40,16 @@ export function EntityCollection({
         rows={entities}
         getRowKey={(e) => e.id}
         columns={[
-          { key: "name", header: labels.fields.name, rowHeader: true, cell: (e) => e.name },
+          {
+            key: "name",
+            header: labels.fields.name,
+            rowHeader: true,
+            cell: (e) => (
+              <Link href={`/app/entities/${e.id}`} className="underline-offset-2 hover:underline">
+                {e.name}
+              </Link>
+            ),
+          },
           { key: "code", header: labels.fields.code, cell: (e) => e.code ?? "—" },
           {
             key: "client",
@@ -82,7 +92,11 @@ export function EntityCollection({
           <article className="flex h-full flex-col gap-3 rounded-2xl border border-gray-200 bg-paper p-5 shadow-card">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="truncate text-lg font-bold">{e.name}</h3>
+                <h3 className="truncate text-lg font-bold">
+                  <Link href={`/app/entities/${e.id}`} className="underline-offset-2 hover:underline">
+                    {e.name}
+                  </Link>
+                </h3>
                 {e.code && (
                   <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">{e.code}</p>
                 )}

@@ -10,7 +10,7 @@
 - `worker/pdf/render.ts`: one shared Chromium per worker, `renderToStaticMarkup` → `page.setContent` →
   `page.pdf({ displayHeaderFooter, headerTemplate (logo + org name), footerTemplate (Page X of Y) })`.
 - Migrations: `report_templates` (system + org), `reports`, `report_batches`.
-- Org branding settings: logo upload (`branding` bucket), brand color, footer text.
+- Org branding settings: logo upload (`branding` bucket), brand color, footer text; plus the org time zone (ADR-020).
 - UI: "Generate statement" (entity + period), batch generate (all entities for a period) with progress, reports
   list with download (signed URL), batch ZIP download (`archiver` in `batch-zip` job).
 - Dev preview route `/app/dev/report-preview` rendering templates as HTML for fast iteration (dev only).

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { reviewCopy } from "@/content/app";
+import { allocationCopy, reviewCopy } from "@/content/app";
+import { AllocationEditor } from "@/features/allocations/components/allocation-editor";
 import { DocumentViewer } from "@/features/documents/components/document-viewer";
 import { listEntityOptions } from "@/features/entities/queries";
 import { RecordTimeline } from "@/features/review/components/record-timeline";
@@ -41,6 +42,8 @@ export default async function ReviewItemPage({
       ? [...entityOptions, { value: entityId, label: item.entityName }]
       : entityOptions;
   const names = new Map(options.map((o) => [o.value, o.label]));
+  const recordSplit = item.allocations.filter((a) => !a.lineItemId);
+  const reviewer = canReview(ctx.role);
 
   return (
     <div className="flex flex-col gap-4">
@@ -55,7 +58,7 @@ export default async function ReviewItemPage({
         context={item.context}
         entityOptions={options}
         entitySingular={labels.singular}
-        canReview={canReview(ctx.role)}
+        canReview={reviewer}
         approverName={item.approverName}
         nav={{
           queueHref: `/app/review${query}`,
@@ -80,6 +83,22 @@ export default async function ReviewItemPage({
           ) : (
             <p className="text-sm text-muted-foreground">{reviewCopy.item.noDocument}</p>
           )
+        }
+        split={
+          <AllocationEditor
+            key={`${item.record.updated_at}-${item.allocations.length}`}
+            recordId={item.record.id}
+            totalCents={item.record.total_cents}
+            currency={item.record.currency}
+            homeEntityId={item.record.entity_id}
+            entityOptions={options}
+            initial={recordSplit.length ? { method: recordSplit[0]!.method, rows: recordSplit } : null}
+            hasLineSplits={item.allocations.some((a) => a.lineItemId)}
+            disabled={!reviewer || item.record.status === "rejected"}
+            disabledReason={!reviewer ? allocationCopy.readOnly : allocationCopy.rejected}
+            singular={labels.singular}
+            plural={labels.plural}
+          />
         }
         history={
           <RecordTimeline
