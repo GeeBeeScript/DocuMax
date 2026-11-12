@@ -194,6 +194,9 @@ export async function acceptInvite(input: unknown): Promise<ActionResult> {
     if (/different email/.test(error.message))
       return fail("This invite was sent to a different email address.");
     if (error.code === "P0002") return fail("This invite is invalid or has expired.");
+    if (error.message === "seat_limit") {
+      return failCode("seat_limit", billingCopy.seatLimit(Number(error.hint) || 1));
+    }
     return dbError(error);
   }
   revalidatePath("/app", "layout");

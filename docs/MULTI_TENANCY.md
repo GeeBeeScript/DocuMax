@@ -102,6 +102,12 @@ When users may edit only some columns of a tenant table (e.g. `documents`), revo
 `authenticated` and grant UPDATE on the editable columns only; state changes go through security-definer
 functions that check role + current state. RLS still applies on top.
 
+Where creating a row has a side effect users must not skip (quota, seats), revoke INSERT too and create rows only
+through a security-definer function: `documents` are created only by `create_document_upload()` (counts quota);
+users may change only an open invite's `role` (`token_hash`, `email`, `accepted_at`, `expires_at` are written at
+insert and by `accept_invite()`, which re-checks seats). Integration tests assert the direct paths are refused
+(`tests/integration/billing/quota.test.ts`, `tests/integration/documents/documents-db.test.ts`).
+
 ### Realtime in the browser
 
 Authenticate the socket before joining a channel: `await supabase.realtime.setAuth(session.access_token)` (see

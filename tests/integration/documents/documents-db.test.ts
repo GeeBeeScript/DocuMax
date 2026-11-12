@@ -7,24 +7,25 @@ const admin = adminClient();
 let owner: TestUser, member: TestUser, viewer: TestUser, outsider: TestUser;
 let orgId: string, otherOrgId: string, otherEntityId: string;
 
+/** Documents are created only through create_document_upload (counts quota, then inserts the row). */
 async function newDocument(user: TestUser, overrides: Record<string, unknown> = {}) {
   const id = randomUUID();
-  const { data, error } = await user.client
-    .from("documents")
-    .insert({
-      id,
-      org_id: orgId,
-      uploaded_by: user.id,
-      storage_path: `${orgId}/documents/${id}/invoice.pdf`,
-      file_name: "invoice.pdf",
-      mime_type: "application/pdf",
-      size_bytes: 2048,
-      ...overrides,
-    })
-    .select()
-    .single();
+  const args = {
+    p_org: orgId,
+    p_id: id,
+    p_storage_path: `${orgId}/documents/${id}/invoice.pdf`,
+    p_file_name: "invoice.pdf",
+    p_mime_type: "application/pdf",
+    p_size_bytes: 2048,
+    p_sha256: null as unknown as string,
+    p_entity: null as unknown as string,
+    ...overrides,
+  };
+  const { error } = await user.client.rpc("create_document_upload", args);
+  const data = error ? null : (await admin.from("documents").select("*").eq("id", id).single()).data;
   return { id, data, error };
 }
+
 const statusOf = async (id: string) =>
   (await admin.from("documents").select("status, attempts, error").eq("id", id).single()).data;
 
@@ -85,21 +86,28 @@ describe("documents", () => {
     expect((await newDocument(viewer)).error?.code).toBe("42501");
   });
 
-  it.each([
-    ["a status other than uploading", { status: "ready" }],
-    ["someone else as uploader", { uploaded_by: "00000000-0000-4000-8000-000000000009" }],
-  ])("cannot be inserted with %s", async (_label, overrides) => {
-    expect((await newDocument(member, overrides)).error?.code).toBe("42501");
+  it("cannot be inserted directly, bypassing create_document_upload", async () => {
+    const id = randomUUID();
+    const { error } = await member.client.from("documents").insert({
+      id,
+      org_id: orgId,
+      uploaded_by: member.id,
+      storage_path: `${orgId}/documents/${id}/invoice.pdf`,
+      file_name: "invoice.pdf",
+      mime_type: "application/pdf",
+      size_bytes: 2048,
+    });
+    expect(error?.code).toBe("42501");
   });
 
   it("must live under {org_id}/documents/{id}/", async () => {
-    const { error } = await newDocument(member, { storage_path: `${otherOrgId}/documents/x/evil.pdf` });
+    const { error } = await newDocument(member, { p_storage_path: `${otherOrgId}/documents/x/evil.pdf` });
     expect(error?.code).toBe("23514");
   });
 
   it("rejects unsupported types and files over 25 MB", async () => {
-    expect((await newDocument(member, { mime_type: "application/zip" })).error?.code).toBe("23514");
-    expect((await newDocument(member, { size_bytes: 26_214_401 })).error?.code).toBe("23514");
+    expect((await newDocument(member, { p_mime_type: "application/zip" })).error?.code).toBe("23514");
+    expect((await newDocument(member, { p_size_bytes: 26_214_401 })).error?.code).toBe("23514");
   });
 
   it("users cannot set status or processing fields directly", async () => {

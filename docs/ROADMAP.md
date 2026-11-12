@@ -16,7 +16,7 @@ tests and a Definition of Done (DoD). Update the **Status** column when a phase 
 | 8   | [PDF reports](phases/08-pdf-reports.md)                  | ✅ Done | 7          |
 | 9   | [Exports & imports](phases/09-exports-imports.md)        | ✅ Done | 7          |
 | 10  | [Billing & usage limits](phases/10-billing.md)           | ✅ Done | 3          |
-| 11  | [Hardening & launch](phases/11-hardening.md)             | ⏳ Next | all        |
+| 11  | [Hardening & launch](phases/11-hardening.md)             | ✅ Done | all        |
 
 Phases 1 and 2 can run in parallel. Phase 7's `lib/calc` work can begin early (pure code).
 

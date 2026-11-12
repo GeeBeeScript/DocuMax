@@ -6,9 +6,21 @@ import type { Database } from "./database.types";
 const PROTECTED = ["/app", "/onboarding"];
 const AUTH_PAGES = ["/login", "/signup"];
 
-/** Only same-origin relative paths are honoured as post-login destinations (no open redirects). */
+const BASE = "http://documax.invalid";
+
+/**
+ * Only same-origin relative paths are honoured as post-login destinations (no open redirects). The value is
+ * resolved the way a browser would (which strips tabs/newlines and treats `\` as `/`), and accepted only if it
+ * stays on this origin; the normalised path is returned.
+ */
 export function safeNext(next: string | null | undefined, fallback = "/app"): string {
-  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : fallback;
+  if (!next || !next.startsWith("/") || /[\u0000-\u001f\u007f\\]/.test(next)) return fallback;
+  try {
+    const url = new URL(next, BASE);
+    return url.origin === BASE ? url.pathname + url.search + url.hash : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 const matches = (path: string, prefixes: string[]) =>
