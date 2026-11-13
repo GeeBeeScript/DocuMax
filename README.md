@@ -3,7 +3,7 @@
 AI document processing for property managers and home-service contractors: upload supplier invoices and receipts,
 get checked structured data, review it, and produce polished monthly cost statements per property or job.
 
-> Contributors and AI agents: start with [CLAUDE.md](CLAUDE.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+> Contributors and AI agents: start with [AGENTS.md](AGENTS.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Prerequisites
 

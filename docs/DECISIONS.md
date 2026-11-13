@@ -119,7 +119,7 @@ path is unit-tested with a mocked decoder — add a real iPhone photo fixture wh
 ## ADR-015 — Extraction: no sampling params, two-layer schema, refusal fallbacks
 
 **Status:** Accepted (2026-11-14)
-DOCUMENT_PIPELINE.md asked for temperature 0. Current Claude models reject sampling parameters (`temperature`,
+DOCUMENT_PIPELINE.md asked for temperature 0. Current Anthropic models reject sampling parameters (`temperature`,
 `top_p`, `top_k`), and they reject forced tool use, so we send neither: the AI SDK uses the provider's native
 structured output and the schema constrains the answer. The model fills a plain-typed `ModelExtraction`; strict
 rules (ISO dates, currency codes, confidence range) are enforced afterwards by `InvoiceExtraction`, with retries
@@ -140,7 +140,7 @@ refuses it when `NODE_ENV=production`. It is not a quality baseline: accuracy is
 
 **Status:** Accepted (2026-11-14)
 `AI_PROVIDER=openrouter` (+ `OPENROUTER_API_KEY`, `AI_MODEL` = an OpenRouter id such as
-`anthropic/claude-sonnet-5.5`) via `@openrouter/ai-sdk-provider`. **Why:** one key reaches Claude and other models,
+`anthropic/claude-sonnet-5.5`) via `@openrouter/ai-sdk-provider`. **Why:** one key reaches Anthropic and other models,
 so the extraction eval can compare models without code changes (ADR-003). Anthropic-only request options (refusal
 fallbacks, effort) are not sent through OpenRouter. Before using it on real customer documents, review OpenRouter's
 data-handling terms (documents pass through a third party); the default for production remains a direct provider.
@@ -153,10 +153,10 @@ data-handling terms (documents pass through a third party); the default for prod
 (`provider: { data_collection: "deny", zdr: true }`) and that honor structured output (`require_parameters`).
 Each provider has its own default model (`DEFAULT_MODELS` in `lib/ai/provider.ts`); `AI_MODEL` overrides.
 **Why:** on the labeled fixtures it met the bar (two full runs 9/9 plus 4/4 of a third, ending on credit, with the
-final prompt) at ≈ $0.002 per document (≈ $0.15 / $0.47 per M tokens) versus ≈ $0.02 for Claude Sonnet 5.5, and an
+final prompt) at ≈ $0.002 per document (≈ $0.15 / $0.47 per M tokens) versus ≈ $0.02 for Anthropic Sonnet 5.5, and an
 open model keeps the option to self-host. The owner chose the open model after an eval comparison was offered.
 **Trade-offs:** 5–30 s per document (it reasons; ~4K output tokens), occasional schema retries; results vary
-between runs, so changes to the prompt or model must be judged on repeated eval runs. Claude Sonnet 5.5 was not
+between runs, so changes to the prompt or model must be judged on repeated eval runs. Anthropic Sonnet 5.5 was not
 measured (no credit) — it remains one setting away (`AI_PROVIDER=anthropic` or `AI_MODEL=anthropic/claude-sonnet-5.5`).
 
 ## ADR-019 — Review rules: reasons, decided records, live validation

@@ -2,7 +2,7 @@
 
 **Goal:** turn page text into the fixed, schema-validated structure with per-field confidence.
 
-> Before implementing, load the `claude-api` skill for current model IDs and structured-output guidance.
+> Before implementing, check the provider's current docs for model IDs and structured-output guidance.
 
 ## Scope
 
@@ -67,6 +67,6 @@ Production configuration — `nvidia/nemotron-3.5-super-vl` (paid endpoint), zer
 | 6   | same                                          | **9/9**              |                                                                  |
 | 7   | same                                          | **4/4** (+5 not run) | stopped: OpenRouter credit exhausted (errors, not wrong answers) |
 
-≈ $0.02 per 9-document run (≈ 1K input + 4–6K output tokens per document), 5–30 s per document. Claude Sonnet 5.5
+≈ $0.02 per 9-document run (≈ 1K input + 4–6K output tokens per document), 5–30 s per document. Anthropic Sonnet 5.5
 was not measured (no credit); the owner chose the open model. Currency was the only unstable field — re-run the
 eval twice after any prompt or model change.

@@ -38,7 +38,7 @@ photo ≈ 0.9 s. All key strings (supplier, invoice no., dates, tax id, totals) 
 - Model: `extractionModel()` from `lib/ai/provider.ts` (provider/model via env, ADR-003). Default: open-weight
   `nvidia/nemotron-3.5-super-vl` via OpenRouter, zero-retention routing only (ADR-018). `lib/ai/extract.ts` calls
   `generateText` with `Output.object({ schema: ModelExtraction })` — the AI SDK uses each provider's native structured
-  output (for current Claude models: `output_config.format`; they reject forced tool use).
+  output (for current Anthropic models: `output_config.format`; they reject forced tool use).
 - Input: concatenated page text with page markers (`--- page 2 ---`), org context (entity kind, entity names/codes
   for matching, known suppliers), and the category list. If OCR confidence is low and the provider supports vision,
   page images may be attached as well.

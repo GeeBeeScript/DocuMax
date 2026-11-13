@@ -73,7 +73,7 @@ describe("extractInvoice", () => {
     expect(prompt).toContain("12 Elm Street · code ELM-12");
   });
 
-  it("does not send sampling parameters (current Claude models reject them)", async () => {
+  it("does not send sampling parameters (current Anthropic models reject them)", async () => {
     const model = mockModel([{ text: recorded("valid-digital-invoice.json") }]);
     await extractInvoice(pages, context, { model });
     expect(model.doGenerateCalls[0].temperature).toBeUndefined();

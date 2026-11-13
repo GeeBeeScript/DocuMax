@@ -14,7 +14,7 @@ import { createDevExtractionModel } from "./dev-model";
  * nor retain prompts (ADR-018).
  *
  * The AI only fills the extraction schema. It never computes totals or allocations — that is lib/calc's job
- * (non-negotiable, see CLAUDE.md).
+ * (non-negotiable, see AGENTS.md).
  */
 
 /** Default model per provider when AI_MODEL is unset. */

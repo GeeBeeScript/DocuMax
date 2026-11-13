@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 
 /**
- * E2E-only service-role helpers (tests may use the service role — CLAUDE.md non-negotiable 1). They stand in for
+ * E2E-only service-role helpers (tests may use the service role — AGENTS.md non-negotiable 1). They stand in for
  * Stripe, which E2E never calls: an org's plan is set as if the webhook had arrived.
  */
 config({ path: ".env.local", quiet: true });

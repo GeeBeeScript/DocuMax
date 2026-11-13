@@ -4,7 +4,7 @@
 
 ## Deliverables
 
-- [x] Governance docs: `CLAUDE.md`, `docs/*` (PRD, ARCHITECTURE, DATA_MODEL, MULTI_TENANCY, DOCUMENT_PIPELINE,
+- [x] Governance docs: `AGENTS.md`, `docs/*` (PRD, ARCHITECTURE, DATA_MODEL, MULTI_TENANCY, DOCUMENT_PIPELINE,
       DESIGN_SYSTEM, CONVENTIONS, TESTING, ROADMAP, DECISIONS) and all phase files.
 - [x] Dependencies: motion, zod v4, Supabase (`supabase-js`, `ssr`), BullMQ, AI SDK (+ anthropic, openai), cva,
       lucide; dev: Vitest, RTL, Playwright, tsx, Prettier (+ Tailwind plugin).

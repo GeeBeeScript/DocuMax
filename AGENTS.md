@@ -99,6 +99,6 @@ docs/                 Product, architecture and phase docs
 - Supabase Realtime in the browser: `await supabase.realtime.setAuth(token)` before subscribing, or RLS hides every event.
 - Values passed from a Server Component to a Client Component must be serializable — no functions or icon
   components in props (copy objects with functions are read inside the client component instead).
-- When implementing AI calls (Phase 5), load the `claude-api` skill for current model IDs and structured-output usage.
+- When implementing AI calls (Phase 5), check the provider's current docs for model IDs and structured-output usage.
 - PDF templates (`pdf/`) are TSX rendered outside Next: the worker/scripts use `tsx --tsconfig tsconfig.worker.json`;
   never import `pdf/document.tsx` (react-dom/server) from `app/`.
